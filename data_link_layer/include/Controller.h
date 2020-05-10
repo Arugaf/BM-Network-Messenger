@@ -84,15 +84,15 @@ namespace BM_Network {
 
     // ---------- PHYSICAL LAYER ----------
 
-    class IDataSender {
+    class IDataReceiver {
     public:
         virtual void sendData(const byte* data) = 0;
-        virtual ~IDataSender() = default;
+        virtual ~IDataReceiver() = default;
     };
 
 #ifndef PHYSICAL_LAYER
 
-    class PhysicalLayerStub : public IDataSender {
+    class PhysicalLayerStub : public IDataReceiver {
     public:
         void sendData(const byte* data) override {
             std::cout << "Data received, address is: " << &data << std::endl;
@@ -101,13 +101,6 @@ namespace BM_Network {
 
 #endif
 
-    class PhysicalLayerController {
-    public:
-        explicit PhysicalLayerController(const std::shared_ptr<IDataSender>& receiver = nullptr);
-        void sendData(const byte* data);
-    private:
-        std::shared_ptr<IDataSender> physical_controller_impl;
-    };
 
     // TODO: Подстановку можно сделать через шаблоны, а не макросы
 
@@ -119,16 +112,12 @@ namespace BM_Network {
         virtual ~IMediatorError() = default;
     };
 
-    class Controller : virtual public IMessageReceiver, virtual public IMediatorError, virtual public IDataSender {
+    class DatalinkLayerController : virtual public IMessageReceiver, virtual public IMediatorError, virtual public IDataReceiver {
     public:
-        Controller(PhysicalLayerController& ph_cl, ApplicationLayerController& ap_cl);
         void sendMessage(const std::string &receiver, const std::string &sender, const std::string &message) override;
         void notifyError() override {};
         void sendData(const byte*) override {};
     private:
-        PhysicalLayerController& physical_controller;
-        ApplicationLayerController& application_controller;
-
         std::map<std::string, byte> users = {{"user1", 0x01},
                                              {"user2", 0x02}};
     };
