@@ -18,17 +18,13 @@ namespace BM_Network {
     public:
         ErrorController() = default;
         [[nodiscard]] virtual bool checkErrors(T) const = 0;
-        virtual void notify() const = 0;
         virtual ~ErrorController() = default;
-    private:
-        Mediator* mediator;
     };
 
     class Hamming3ErrorController : public ErrorController<byte> {
     public:
         Hamming3ErrorController() = default;
         [[nodiscard]] bool checkErrors(byte check_byte) const override;
-        void notify() const override;
         ~Hamming3ErrorController() override = default;
     };
 }

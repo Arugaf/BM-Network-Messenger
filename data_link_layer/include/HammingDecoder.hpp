@@ -21,6 +21,7 @@ namespace BM_Network {
     public:
         [[nodiscard]] virtual const T* getDecodedBytes() const = 0;
         [[nodiscard]] virtual size_t getSize() const = 0;
+        [[nodiscard]] virtual bool isError() const = 0;
         virtual ~IDecoder() = default;
     };
 
@@ -33,6 +34,7 @@ namespace BM_Network {
 
         [[nodiscard]] const T* getDecodedBytes() const override;
         [[nodiscard]] size_t getSize() const override;
+        [[nodiscard]] bool isError() const override;
 
         void visualize() const;
     private:
@@ -41,11 +43,14 @@ namespace BM_Network {
         size_t size;
         size_t bits;
 
+        bool error;
+
         constexpr static unsigned int length = (1u << R) - 1;
     };
 
     template<typename T, unsigned int R, typename error_controller, typename restriction>
-    HammingDecoder<T, R, error_controller, restriction>::HammingDecoder(const byte* data, byte stop_byte) : bits(0) {
+    HammingDecoder<T, R, error_controller, restriction>::HammingDecoder(const byte* data, byte stop_byte) : bits(0),
+                                                                                                            error(false) {
         std::string decoded_bytes_string;
 
         byte check_byte = 0;
@@ -68,9 +73,7 @@ namespace BM_Network {
             ++bits;
 
             if (!(bits % length)) {
-                if (error_controller_impl->checkErrors(check_byte)) {
-                    std::cout << "Error!" << std::endl;
-                }
+                error = error_controller_impl->checkErrors(check_byte);
                 check_byte = 0;
             }
         }
@@ -112,6 +115,11 @@ namespace BM_Network {
     template<typename T, unsigned int R, typename error_controller, typename restriction>
     size_t HammingDecoder<T, R, error_controller, restriction>::getSize() const {
         return size;
+    }
+
+    template<typename T, unsigned int R, typename error_controller, typename restriction>
+    bool HammingDecoder<T, R, error_controller, restriction>::isError() const {
+        return error;
     }
 }
 

@@ -5,6 +5,7 @@
 #include <Controller.h>
 
 #include "Controller.h"
+#include "HammingDecoder.hpp"
 #include "HammingEncoder.hpp"
 #include "Frame.h"
 
@@ -27,7 +28,7 @@ void BM_Network::ApplicationLayerController::sendEvent(BM_Network::Event event) 
     application_controller_event_impl->sendEvent(event);
 }
 
-BM_Network::PhysicalLayerController::PhysicalLayerController(const std::shared_ptr<IDataSender>& receiver)
+BM_Network::PhysicalLayerController::PhysicalLayerController(const std::shared_ptr<IDataReceiver>& receiver)
         : physical_controller_impl(receiver) {
     if (!receiver) {
         physical_controller_impl = std::make_shared<PHYSICAL_LAYER_POINTER>();
@@ -36,17 +37,4 @@ BM_Network::PhysicalLayerController::PhysicalLayerController(const std::shared_p
 
 void BM_Network::PhysicalLayerController::sendData(const BM_Network::byte* data) {
     physical_controller_impl->sendData(data);
-}
-
-BM_Network::Controller::Controller(BM_Network::PhysicalLayerController& ph_cl,
-                                   BM_Network::ApplicationLayerController& ap_cl) : physical_controller(ph_cl),
-                                                                                    application_controller(ap_cl) {
-
-}
-
-void BM_Network::Controller::sendMessage(const std::string& receiver, const std::string& sender,
-                                         const std::string& message) {
-    std::unique_ptr<IFrame> frame = std::make_unique<Frame>(users[receiver], users[sender], InfFrame, message.size(), message.c_str());
-    std::unique_ptr<IEncoder> encoder = std::make_unique<HammingEncoder<byte>>(frame->getFrame(), frame->getSize());
-    physical_controller.sendData(encoder->getCodedBytes());
 }

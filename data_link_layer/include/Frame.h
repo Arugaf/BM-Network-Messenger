@@ -12,13 +12,6 @@
 namespace BM_Network {
     typedef char byte;
 
-    class IFrame {
-    public:
-        [[nodiscard]] virtual const byte* getFrame() const = 0;
-        [[nodiscard]] virtual size_t getSize() const = 0;
-        virtual ~IFrame() = default;
-    };
-
     enum FrameTypes {
         InfFrame = 1, // Information frame for data exchange
         LFrame = 2,   // Link frame for connection establishing
@@ -27,7 +20,7 @@ namespace BM_Network {
         RFrame = 5    // Ret frame for repeated request
     };
 
-    class Frame : public IFrame {
+    class Frame {
     public:
         Frame(byte dest_adress,
               byte sender_address,
@@ -37,10 +30,10 @@ namespace BM_Network {
               byte start_byte = 0xFF,
               byte stop_byte = 0xFF);
         Frame(const byte* frame, size_t frame_size);
-        ~Frame() override;
+        ~Frame();
 
-        [[nodiscard]] const byte* getFrame() const override;
-        [[nodiscard]] size_t getSize() const override;
+        [[nodiscard]] const byte* getFrame() const;
+        [[nodiscard]] size_t getSize() const;
 
         [[nodiscard]] byte getDestination() const;
         [[nodiscard]] byte getSender() const;

@@ -11,7 +11,3 @@ bool BM_Network::Hamming3ErrorController::checkErrors(BM_Network::byte check_byt
     auto third = check_bits[3] ^ check_bits[4] ^ check_bits[5] ^ check_bits[6];
     return first || second || third;
 }
-
-void BM_Network::Hamming3ErrorController::notify() const {
-    std::cout << "lol" << std::endl;
-}

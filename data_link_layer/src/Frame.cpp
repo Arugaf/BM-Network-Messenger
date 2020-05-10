@@ -12,8 +12,8 @@ BM_Network::Frame::Frame(BM_Network::byte dest_adress, BM_Network::byte sender_a
     this->dest_address = memory_area + 1;
     this->sender_address = memory_area + 2;
     this->frame_type = memory_area + 3;
-    data_size ? this->data_size = memory_area + 4 : nullptr;
-    data_size ? this->data = memory_area + 5 : nullptr;
+    data_size ? this->data_size = memory_area + 4 : this->data_size = nullptr;
+    data_size ? this->data = memory_area + 5 : this->data = nullptr;
     data_size ? this->stop_byte = memory_area + 5 + data_size : this->stop_byte = memory_area + 4;
 
     *this->start_byte = start_byte;
@@ -35,8 +35,8 @@ BM_Network::Frame::Frame(const BM_Network::byte* frame, size_t frame_size) : mem
     this->sender_address = memory_area + 2;
     this->frame_type = memory_area + 3;
 
-    frame_size > 5 ? this->data_size = memory_area + 4 : nullptr;
-    frame_size > 5 ? this->data = memory_area + 5 : nullptr;
+    frame_size > 5 ? this->data_size = memory_area + 4 : this->data_size = nullptr;
+    frame_size > 5 ? this->data = memory_area + 5 : this->data = nullptr;
     this->stop_byte = memory_area + frame_size - 1;
 }
 
@@ -71,5 +71,8 @@ BM_Network::byte BM_Network::Frame::getType() const {
 }
 
 std::string BM_Network::Frame::getData() const {
+    if (data_size) {
+        std::cout << 'l';
+    }
     return data_size ? std::string(data, *data_size) : std::string();
 }
