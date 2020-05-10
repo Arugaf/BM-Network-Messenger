@@ -6,79 +6,112 @@
 #define BM_NETWORK_MESSENGER_HAMMINGDECODER_H
 
 #include "BitIO.h"
-#include "HammingErrorController3.h"
+#include "Hamming3ErrorController.h"
 
+#include <algorithm>
 #include <bitset>
 #include <iostream>
 #include <type_traits>
 
 namespace BM_Network {
-    typedef unsigned long size_t;
-    typedef unsigned char byte;
+    typedef char byte;
 
-    template<typename T, unsigned int R = 3,
-             typename restriction = typename std::enable_if<std::is_fundamental<T>::value>::type,
-             typename error_controller = HammingErrorController3>
-    class HammingDecoder {
+    template<typename T>
+    class IDecoder {
     public:
-        HammingDecoder(const byte* data, size_t data_size);
-        ~HammingDecoder();
+        [[nodiscard]] virtual const T* getDecodedBytes() const = 0;
+        [[nodiscard]] virtual size_t getSize() const = 0;
+        virtual ~IDecoder() = default;
+    };
 
-        T* getDecodedBytes();
-        void visualize();
+    template<typename T, unsigned int R = 3, typename error_controller = Hamming3ErrorController,
+             typename restriction = typename std::enable_if<std::is_fundamental<T>::value>::type>
+    class HammingDecoder : public IDecoder<T> {
+    public:
+        explicit HammingDecoder(const byte* data, byte stop_byte = 0xFF);
+        ~HammingDecoder() override;
+
+        [[nodiscard]] const T* getDecodedBytes() const override;
+        [[nodiscard]] size_t getSize() const override;
+
+        void visualize() const;
     private:
-        byte* decoded_bytes;
+        T* decoded_bytes;
 
         size_t size;
         size_t bits;
 
         constexpr static unsigned int length = (1u << R) - 1;
-        constexpr static float multiplier = static_cast<float>(length) / (length - R);
     };
 
-    template<typename T, unsigned int R, typename restriction, typename ec>
-    HammingDecoder<T, R, restriction, ec>::HammingDecoder(const byte* data, size_t data_size) :
-                                                                        bits(data_size * 8 - data_size * 8 % length),
-                                                                        size(data_size / multiplier / sizeof(T)) {
-        decoded_bytes = new byte[size];
+    template<typename T, unsigned int R, typename error_controller, typename restriction>
+    HammingDecoder<T, R, error_controller, restriction>::HammingDecoder(const byte* data, byte stop_byte) : bits(0) {
+        std::string decoded_bytes_string;
 
-        byte check_byte;
-        for (size_t current_bit = 0, i = 0; current_bit < bits; ++i) {
-            while (!((current_bit % length + 1) & current_bit % length)) {
-                BitIO::writeBit(&check_byte, BitIO::readBit(data, current_bit), current_bit % length);
-                ++current_bit;
+        byte check_byte = 0;
+        byte byte_to_write = 0;
+
+        ErrorController<byte>* error_controller_impl = new Hamming3ErrorController;
+
+        for (size_t i = 0; byte_to_write != stop_byte || i <= 8; ++i) {
+            if (!(i % 8) && i) {
+                decoded_bytes_string.push_back(byte_to_write);
+                byte_to_write = 0;
             }
-            BitIO::writeBit(decoded_bytes, BitIO::readBit(data, current_bit), i);
-            BitIO::writeBit(&check_byte, BitIO::readBit(data, current_bit), current_bit % length);
-            ++current_bit;
 
-            if (!(current_bit % length)) {
-                if (HammingErrorController3::checkErrors(check_byte)) {
+            while (!((bits % length + 1) & bits % length)) {
+                BitIO::writeBit(&check_byte, BitIO::readBit(data, bits), bits % length);
+                ++bits;
+            }
+            BitIO::writeBit(&byte_to_write, BitIO::readBit(data, bits), i % 8);
+            BitIO::writeBit(&check_byte, BitIO::readBit(data, bits), bits % length);
+            ++bits;
+
+            if (!(bits % length)) {
+                if (error_controller_impl->checkErrors(check_byte)) {
                     std::cout << "Error!" << std::endl;
                 }
                 check_byte = 0;
             }
         }
+
+        decoded_bytes_string.push_back(byte_to_write);
+
+        size = decoded_bytes_string.size() / sizeof(T);
+        decoded_bytes_string.size() % sizeof(T) ? ++size : size;
+
+        auto decoded_bytes_b = new byte[decoded_bytes_string.size() + 1];
+        std::copy(decoded_bytes_string.begin(), decoded_bytes_string.end(), decoded_bytes_b);
+        decoded_bytes_b[decoded_bytes_string.size()] = 0;
+
+        decoded_bytes = reinterpret_cast<T*>(decoded_bytes_b);
+
+        delete error_controller_impl;
     }
 
-    template<typename T, unsigned int R, typename restriction, typename ec>
-    HammingDecoder<T, R, restriction, ec>::~HammingDecoder() {
+    template<typename T, unsigned int R, typename error_controller, typename restriction>
+    HammingDecoder<T, R, error_controller, restriction>::~HammingDecoder() {
         delete[] decoded_bytes;
     }
 
-    template<typename T, unsigned int R, typename restriction, typename ec>
-    void HammingDecoder<T, R, restriction, ec>::visualize() {
+    template<typename T, unsigned int R, typename error_controller, typename restriction>
+    void HammingDecoder<T, R, error_controller, restriction>::visualize() const {
         for (size_t i = 0; i < size; ++i) {
-            std::cout << static_cast<long long>(reinterpret_cast<T*>(decoded_bytes)[i]) <<
+            std::cout << reinterpret_cast<T*>(decoded_bytes)[i] <<
                          ' ' <<
                          std::bitset<8 * sizeof(T)>(reinterpret_cast<T*>(decoded_bytes)[i]) <<
                          std::endl;
         }
     }
 
-    template<typename T, unsigned int R, typename restriction, typename ec>
-    T* HammingDecoder<T, R, restriction, ec>::getDecodedBytes() {
-        return reinterpret_cast<T*>(decoded_bytes);
+    template<typename T, unsigned int R, typename error_controller, typename restriction>
+    const T* HammingDecoder<T, R, error_controller, restriction>::getDecodedBytes() const {
+        return decoded_bytes;
+    }
+
+    template<typename T, unsigned int R, typename error_controller, typename restriction>
+    size_t HammingDecoder<T, R, error_controller, restriction>::getSize() const {
+        return size;
     }
 }
 

@@ -13,19 +13,26 @@
 #include <type_traits>
 
 namespace BM_Network {
-    typedef unsigned long size_t;
-    typedef unsigned char byte;
+    typedef char byte;
+
+    class IEncoder {
+    public:
+        [[nodiscard]] virtual const byte* getCodedBytes() const = 0;
+        [[nodiscard]] virtual size_t getSize() const = 0;
+        virtual ~IEncoder() = default;
+    };
 
     template<typename T, unsigned int R = 3,
              typename restriction = typename std::enable_if<std::is_fundamental<T>::value>::type>
-    class HammingEncoder {
+    class HammingEncoder : public IEncoder {
     public:
         HammingEncoder(const T* data, int data_size);
-        ~HammingEncoder();
+        ~HammingEncoder() override;
 
-        byte* getCodedBytes();
-        auto getSize();
-        void visualize();
+        [[nodiscard]] const byte* getCodedBytes() const override;
+        [[nodiscard]] size_t getSize() const override;
+
+        void visualize() const;
 
         void spoilByte(size_t bit);
     private:
@@ -45,7 +52,7 @@ namespace BM_Network {
                             overhead(static_cast<short>(data_size * sizeof(T) * 8 * multiplier) % 8),
                             size(data_size * sizeof(T) * multiplier) {
         overhead ? size++ : size;
-        encoded_bytes = new byte[size];
+        encoded_bytes = new byte[size + 1];
         std::fill(encoded_bytes, encoded_bytes + size, 0);
 
         auto data_bytes = reinterpret_cast<const byte*>(data);
@@ -75,6 +82,8 @@ namespace BM_Network {
                                                BitIO::readBit(encoded_bytes, current_bit + 5) ^
                                                BitIO::readBit(encoded_bytes, current_bit + 6), current_bit + 3);
         }
+
+        encoded_bytes[size] = 0;
     }
 
     template<typename T, unsigned int R, typename restriction>
@@ -83,19 +92,19 @@ namespace BM_Network {
     }
 
     template<typename T, unsigned int R, typename restriction>
-    byte* HammingEncoder<T, R, restriction>::getCodedBytes() {
+    const byte* HammingEncoder<T, R, restriction>::getCodedBytes() const {
         return encoded_bytes;
     }
 
     template<typename T, unsigned int R, typename restriction>
-    auto HammingEncoder<T, R, restriction>::getSize() {
+    size_t HammingEncoder<T, R, restriction>::getSize() const {
         return size;
     }
 
     template<typename T, unsigned int R, typename restriction>
-    void HammingEncoder<T, R, restriction>::visualize() {
+    void HammingEncoder<T, R, restriction>::visualize() const {
         for (size_t i = 0; i < size; ++i) {
-            std::cout << static_cast<int>(encoded_bytes[i]) << ' ' << std::bitset<8>(encoded_bytes[i]) << std::endl;
+            std::cout << static_cast<T>(encoded_bytes[i]) << ' ' << std::bitset<8>(encoded_bytes[i]) << std::endl;
         }
     }
 

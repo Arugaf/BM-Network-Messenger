@@ -7,11 +7,11 @@
 
 namespace BM_Network {
     typedef unsigned long size_t;
-    typedef unsigned char byte;
+    typedef char byte;
 
     class BitIO {
     public:
-        static void writeBit(byte* bytes, unsigned char bit, size_t index);
+        static void writeBit(byte* bytes, byte bit, size_t index);
         static byte readBit(const byte* bytes, size_t index);
     };
 }

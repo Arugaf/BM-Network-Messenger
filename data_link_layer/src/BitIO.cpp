@@ -4,7 +4,7 @@
 
 #include "BitIO.h"
 
-void BM_Network::BitIO::writeBit(BM_Network::byte* bytes, unsigned char bit, size_t index) {
+void BM_Network::BitIO::writeBit(BM_Network::byte* bytes, BM_Network::byte bit, size_t index) {
     if (readBit(&bit, 0)) {
         bytes[index / 8] |= 1u << (index % 8);
     } else {
