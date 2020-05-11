@@ -4,6 +4,7 @@
 #include "HammingDecoder.hpp"
 #include "Frame.h"
 #include "Controller.h"
+#include "Application.h"
 #include "FrameTransformer.h"
 
 //TODO:: transformator, кадры, контроль и обработка ошибок, управление соединением, интерфейсы, наследники
@@ -39,15 +40,31 @@ int main() {
 
     delete frame;*/
 
+
+    //TODO сделай примерно так
+
     BM_Network::ApplicationLayerController app_cl;
     //app_cl.sendEvent(BM_Network::ACK);
     //app_cl.sendMessage("kekus", "omegus", "cheburekus");
 
-    BM_Network::PhysicalLayerController phc_cl;
+    PhysicalLayer phc_cl;
     //phc_cl.sendData("lolmega");
 
-    BM_Network::Controller dl_cl(phc_cl, app_cl);
-    dl_cl.sendMessage("user1", "user2", "omegalul kekus cheburekus");
+    BM_Network::DatalinkLayerController dl_cl;
+
+    //binding controllers as interfaces
+
+    phc_cl.bindDataLinkLayer((BM_Network::IDataReceiver*) &dl_cl);
+
+//    app_cl.bindDataLinkLayer()
+
+//    dl_cl.bindPhysicalLayer()
+//    dl_cl.bindApplicationLayer()
+
+    Application application(phc_cl, dl_cl, app_cl);
+
+    //тут какая-то логика старта всей системы, управления жизнью контроллеров и т.п.
+    application.start();
 
     return 0;
 }
