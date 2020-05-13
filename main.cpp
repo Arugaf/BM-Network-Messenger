@@ -1,13 +1,28 @@
 #include <iostream>
 
-#include "HammingEncoder.hpp"
-#include "HammingDecoder.hpp"
-#include "Frame.h"
 #include "Controller.h"
 #include "Application.h"
-#include "FrameTransformer.h"
 
 //TODO:: transformator, кадры, контроль и обработка ошибок, управление соединением, интерфейсы, наследники
+
+
+class DatalinkLayerStub : virtual public IDatalink{
+    typedef char byte;
+public:
+    void sendData(const byte *data) override{
+        physicalLayer->sendData(data);
+    }
+    void connLostCallback(const PortType &portType) override{
+        std::cout<<"Connection "<<portType<<" is losted"<<std::endl;
+    }
+    void bindPhysicalLayer(IDatalink *receiver = nullptr){
+        this->physicalLayer=receiver;
+    }
+
+private:
+    IDatalink *physicalLayer = nullptr;
+};
+
 
 
 int main() {
@@ -43,31 +58,29 @@ int main() {
 
     //TODO сделай примерно так
 
-    BM_Network::ApplicationLayerController app_cl;
-    //app_cl.sendEvent(BM_Network::ACK);
-    //app_cl.sendMessage("kekus", "omegus", "cheburekus");
+//    BM_Network::ApplicationLayerController app_cl;
+    //app.sendEvent(BM_Network::ACK);
+    //app.sendMessage("kekus", "omegus", "cheburekus");
 
-    PhysicalLayer phc_cl;
-    //phc_cl.sendData("lolmega");
+    PhysicalLayer phc;
 
-    BM_Network::DatalinkLayerController dl_cl;
+    DatalinkLayerStub dl;
 
     //binding controllers as interfaces
+    dl.bindPhysicalLayer((IDatalink *) &phc);
 
-    phc_cl.bindDataLinkLayer((BM_Network::IDataReceiver*) &dl_cl);
+    phc.bindDatalinkLayer((IDatalink *) &dl);
+//    phc.bindDatalinkLayer((IPhysical*) &dl);
 
-//    app_cl.bindDataLinkLayer()
+//    app.bindDatalinkLayer()
 
-//    dl_cl.bindPhysicalLayer()
-//    dl_cl.bindApplicationLayer()
+//    dl.bindPhysicalLayer()
+//    dl.bindApplicationLayer()
 
-    Application application(phc_cl, dl_cl, app_cl);
+//    Application application(phc, dl, app);
 
-    //тут какая-то логика старта всей системы, управления жизнью контроллеров и т.п.
-    application.start();
+    //тут какая-то логика старта всей системы, управления жизнью и т.п., т.к мы запускаем отдельный поток, поэтому тут мы должны как-то застопаться, чтобы не грохнуть его
+//    application.start();
 
     return 0;
 }
-
-
-

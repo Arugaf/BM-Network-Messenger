@@ -14,5 +14,19 @@ find_package(PkgConfig)
 pkg_check_modules(SERIAL libserial)
 
 include_directories(data_link_layer/include)
-add_executable(BM_Network_Messenger main.cpp Application.h Application.cpp data_link_layer/src/BitIO.cpp data_link_layer/src/Hamming3ErrorController.cpp
-        data_link_layer/src/Frame.cpp data_link_layer/src/Controller.cpp data_link_layer/src/FrameTransformer.cpp Application.h physical_layer/PhysicalLayer.cpp physical_layer/PhysicalLayer.h)
+add_executable(BM_Network_Messenger
+        main.cpp
+        Application.h
+        Application.cpp
+        data_link_layer/src/BitIO.cpp
+        data_link_layer/src/Hamming3ErrorController.cpp
+        data_link_layer/src/Frame.cpp
+        data_link_layer/src/Controller.cpp
+        data_link_layer/src/FrameTransformer.cpp
+        data_link_layer/include/IDatalink.h
+        Application.h
+        physical_layer/PhysicalLayer.cpp
+        physical_layer/PhysicalLayer.h
+        physical_layer/IPhysical.h
+        Utils.h
+        )

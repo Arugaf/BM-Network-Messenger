@@ -5,37 +5,39 @@
 #ifndef BM_NETWORK_MESSENGER_PHYSICALLAYERCONTROLLER_H
 #define BM_NETWORK_MESSENGER_PHYSICALLAYERCONTROLLER_H
 
-#include <Controller.h>
+#include "IPhysical.h"
+
 #include <SerialStream.h>
-
 #include <iostream>
-#include <thread>
-#include <SerialPort.h>
+#include <IDatalink.h>
 
-
-constexpr const char *const SERIAL_PORT_1 = "COM1";
-constexpr const char *const SERIAL_PORT_2 = "COM2";
-
-class PhysicalLayer : virtual public BM_Network::IDataReceiver {
+class PhysicalLayer: virtual public IPhysical{
     typedef char byte;
 
 public:
-    explicit PhysicalLayer();
 
-    ~PhysicalLayer() override;
+    explicit PhysicalLayer() = default;
 
-    void bindDataLinkLayer(BM_Network::IDataReceiver *receiver = nullptr);
+    ~PhysicalLayer();
+
+    void bindDatalinkLayer(IDatalink *receiver = nullptr);
 
     //here we receive data from DataLinkLayer
     void sendData(const byte *) override;
 
+    OpenPortCallbackMessage openPort(std::string portName, const PortType &portType) override;
+
+    void waitMainThread();
+
 private:
-    BM_Network::IDataReceiver *datalink_controller;
+    IDatalink *datalinkLayer = nullptr;
 
     LibSerial::SerialStream serial_port_read;
     LibSerial::SerialStream serial_port_write;
 
-    std::string buffer_read="";
+    std::string buffer_read = "";
+
+    std::thread *physical_layer_thread;
 
     void read();
 };
