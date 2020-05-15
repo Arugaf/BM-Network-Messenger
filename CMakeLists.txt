@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 project(BM_Network_Messenger)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 
 #
 # Prefer -pthread compiler and linker flag when using libpthread. This must

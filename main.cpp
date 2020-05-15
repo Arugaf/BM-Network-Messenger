@@ -70,6 +70,8 @@ int main() {
     dl.bindPhysicalLayer((IDatalink *) &phc);
 
     phc.bindDatalinkLayer((IDatalink *) &dl);
+
+    phc.openPort("COM1", PortType(WRITE));
 //    phc.bindDatalinkLayer((IPhysical*) &dl);
 
 //    app.bindDatalinkLayer()
