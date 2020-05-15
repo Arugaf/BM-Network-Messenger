@@ -6,10 +6,19 @@
 #define BM_NETWORK_MESSENGER_PHYSICALLAYERCONTROLLER_H
 
 #include "IPhysical.h"
-
-#include <SerialStream.h>
-#include <iostream>
 #include <IDatalink.h>
+
+#include <iostream>
+#include <stdlib.h>
+#include <stdio.h>
+
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
+#endif
+
+#include "rs232.h"
 
 class PhysicalLayer: virtual public IPhysical{
     typedef char byte;

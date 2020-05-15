@@ -10,12 +10,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(THREADS_HAVE_PTHREAD_ARG 1)
 find_package(Threads REQUIRED)
 #
-find_package(PkgConfig)
-pkg_check_modules(SERIAL libserial)
 
 include_directories(data_link_layer/include)
 add_executable(BM_Network_Messenger
         main.cpp
+        physical_layer/rs232.h
+        physical_layer/rs232.c
         Application.h
         Application.cpp
         data_link_layer/src/BitIO.cpp

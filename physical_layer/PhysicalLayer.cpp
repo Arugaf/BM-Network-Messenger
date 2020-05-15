@@ -7,6 +7,7 @@
 
 void PhysicalLayer::bindDatalinkLayer(IDatalink *receiver) {
     this->datalinkLayer = receiver;
+    DCB
 }
 
 void PhysicalLayer::read() {
@@ -57,13 +58,13 @@ void PhysicalLayer::sendData(const PhysicalLayer::byte *data) {
 OpenPortCallbackMessage PhysicalLayer::openPort(std::string portName, const PortType &portType) {
     try {
         switch (portType) {
-            case PortType::WRITE: {
+            case PortType::READ: {
                 serial_port_read.Open(portName);
 
                 //Start listening port, blocking current thread
                 this->physical_layer_thread=new std::thread(&PhysicalLayer::read, this);
             }
-            case PortType::READ: {
+            case PortType::WRITE: {
                 serial_port_write.Open(portName);
             }
         }
