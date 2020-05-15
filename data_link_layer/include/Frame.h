@@ -5,21 +5,13 @@
 #ifndef BM_NETWORK_MESSENGER_FRAME_H
 #define BM_NETWORK_MESSENGER_FRAME_H
 
+#include "BM_Network.h"
+
 #include <algorithm>
 #include <bitset>
 #include <iostream>
 
 namespace BM_Network {
-    typedef char byte;
-
-    enum FrameTypes {
-        InfFrame = 1, // Information frame for data exchange
-        LFrame = 2,   // Link frame for connection establishing
-        UFrame = 3,   // Uplink frame for disconnection
-        AFrame = 4,   // ACK frame for receipt confirmation
-        RFrame = 5    // Ret frame for repeated request
-    };
-
     class Frame {
     public:
         Frame(byte dest_adress,

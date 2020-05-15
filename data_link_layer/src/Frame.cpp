@@ -4,6 +4,8 @@
 
 #include "Frame.h"
 
+using namespace BM_Network;
+
 BM_Network::Frame::Frame(BM_Network::byte dest_adress, BM_Network::byte sender_address, BM_Network::byte frame_type,
                          BM_Network::byte data_size, const BM_Network::byte* data, BM_Network::byte start_byte,
                          BM_Network::byte stop_byte) : memory_area(data_size ? new byte[data_size + 6] : new byte[5]),
@@ -27,7 +29,7 @@ BM_Network::Frame::Frame(BM_Network::byte dest_adress, BM_Network::byte sender_a
     *this->stop_byte = stop_byte;
 }
 
-BM_Network::Frame::Frame(const BM_Network::byte* frame, size_t frame_size) : memory_area(new byte[frame_size]), frame_size(frame_size) {
+BM_Network::Frame::Frame(const BM_Network::byte* frame, BM_Network::size_t frame_size) : memory_area(new byte[frame_size]), frame_size(frame_size) {
     std::copy(frame, frame + frame_size, memory_area);
 
     this->start_byte = memory_area;
@@ -44,7 +46,7 @@ const BM_Network::byte* BM_Network::Frame::getFrame() const {
     return memory_area;
 }
 
-size_t BM_Network::Frame::getSize() const {
+BM_Network::size_t BM_Network::Frame::getSize() const {
     return frame_size;
 }
 
@@ -53,7 +55,7 @@ BM_Network::Frame::~Frame() {
 }
 
 void BM_Network::Frame::visualize() const {
-    for (size_t i = 0; i < frame_size; ++i) {
+    for (BM_Network::size_t i = 0; i < frame_size; ++i) {
         std::cout << static_cast<short>(memory_area[i]) << ' ' << std::bitset<8>(memory_area[i]) << std::endl;
     }
 }
@@ -71,8 +73,5 @@ BM_Network::byte BM_Network::Frame::getType() const {
 }
 
 std::string BM_Network::Frame::getData() const {
-    if (data_size) {
-        std::cout << 'l';
-    }
     return data_size ? std::string(data, *data_size) : std::string();
 }

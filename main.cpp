@@ -3,7 +3,7 @@
 #include "HammingEncoder.hpp"
 #include "HammingDecoder.hpp"
 #include "Frame.h"
-#include "Controller.h"
+#include "DataLinkController.h"
 
 //TODO:: transformator, кадры, контроль и обработка ошибок, управление соединением, интерфейсы, наследники
 
@@ -38,18 +38,25 @@ int main() {
 
     delete frame;*/
 
-    BM_Network::ApplicationLayerController app_cl;
+    BM_Network::ApplicationControllerDL app_cl;
     //app_cl.sendEvent(BM_Network::ACK);
     //app_cl.sendMessage("kekus", "omegus", "cheburekus");
 
-    BM_Network::PhysicalLayerController phc_cl;
+    BM_Network::PhysicalControllerDL phc_cl;
     //phc_cl.sendData("lolmega");
 
-    BM_Network::Controller dl_cl(phc_cl, app_cl);
+    BM_Network::DataLinkController dl_cl(phc_cl, app_cl);
     //dl_cl.sendMessage("user1", "user2", "omegalul kekus cheburekus");
-    BM_Network::Frame iframe(0x2, 0x1, BM_Network::InfFrame);
+    std::string kek("omegalul");
+    BM_Network::Frame iframe(0x2, 0x1, BM_Network::InfFrame, kek.size(), kek.c_str());
     BM_Network::HammingEncoder iencoder(iframe.getFrame(), iframe.getSize());
+    //iencoder.visualize();
+    BM_Network::HammingDecoder<BM_Network::byte> idecoder(iencoder.getCodedBytes());
+    //std::cout << std::endl << std::endl;
+    //idecoder.visualize();
     dl_cl.sendData(iencoder.getCodedBytes());
+
+    std::cout << dl_cl.connectPorts("kek", "cheburek");
 
     return 0;
 }

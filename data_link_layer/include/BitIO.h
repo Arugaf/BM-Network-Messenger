@@ -5,10 +5,9 @@
 #ifndef BM_NETWORK_MESSENGER_BITIO_H
 #define BM_NETWORK_MESSENGER_BITIO_H
 
-namespace BM_Network {
-    typedef unsigned long size_t;
-    typedef char byte;
+#include "BM_Network.h"
 
+namespace BM_Network {
     class BitIO {
     public:
         static void writeBit(byte* bytes, byte bit, size_t index);

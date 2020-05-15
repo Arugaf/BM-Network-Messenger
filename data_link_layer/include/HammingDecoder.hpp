@@ -5,6 +5,8 @@
 #ifndef BM_NETWORK_MESSENGER_HAMMINGDECODER_H
 #define BM_NETWORK_MESSENGER_HAMMINGDECODER_H
 
+#include "BM_Network.h"
+
 #include "BitIO.h"
 #include "Hamming3ErrorController.h"
 
@@ -14,8 +16,6 @@
 #include <type_traits>
 
 namespace BM_Network {
-    typedef char byte;
-
     template<typename T>
     class IDecoder {
     public:

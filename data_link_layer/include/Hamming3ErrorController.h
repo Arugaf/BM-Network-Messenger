@@ -5,14 +5,12 @@
 #ifndef BM_NETWORK_MESSENGER_HAMMING3ERRORCONTROLLER_H
 #define BM_NETWORK_MESSENGER_HAMMING3ERRORCONTROLLER_H
 
+#include "BM_Network.h"
+
 #include <bitset>
 #include <iostream>
 
 namespace BM_Network {
-    typedef char byte;
-
-    class Mediator; // TODO: Передавать mediator в конструктор
-
     template<typename T>
     class ErrorController {
     public:
