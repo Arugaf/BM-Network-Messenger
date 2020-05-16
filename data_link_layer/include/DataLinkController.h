@@ -67,6 +67,7 @@ namespace BM_Network {
         bool connectPorts(const std::string& input_port, const std::string& output_port) override;
         bool connectToRing(const std::string& user_name) override;
         void unlinkRing() override;
+        void connLostCallback(const PortType &portType) override;
 
     private:
         PhysicalControllerDL& physical_controller;
@@ -377,6 +378,19 @@ namespace BM_Network {
     void DataLinkController<DataType, Encoder, Decoder>::addPhysicalController(
             const std::shared_ptr<IPhysicalLayerController>& p_c) {
         physical_controller.injectImpl(p_c);
+    }
+
+    template<typename DataType, typename Encoder, typename Decoder>
+    void DataLinkController<DataType, Encoder, Decoder>::connLostCallback(const PortType& portType) {
+        connected = false;
+        disconnect_timeout = true;
+
+        physical_controller.disconnectPorts();
+
+        users.clear();
+        addresses.clear();
+
+        application_controller.sendEvent(DISRUPTION);
     }
 }
 

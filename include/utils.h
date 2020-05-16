@@ -129,6 +129,7 @@ namespace BM_Network {
     public:
         void sendData(const byte *data) override = 0;
         void sendMessage(const std::string &receiver, const std::string &sender, const std::string &message) override = 0;
+        virtual void connLostCallback(const PortType& portType) = 0;
         ~IDataLinkControllerPhysical() override = default;
     };
 
