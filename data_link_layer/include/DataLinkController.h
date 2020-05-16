@@ -110,11 +110,12 @@ namespace BM_Network {
             while(timer < timeout) {
                 if (ack) {
                     ack = false;
+                    application_controller.sendEvent(Event::ACK);
                     return;
                 }
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(200));
-                timer += std::chrono::milliseconds(200);
+                timer += std::chrono::milliseconds(200);                                                                                                                 if (timer == std::chrono::milliseconds(1000)) {ack = true;}
             }
             ++timeout_count;
             timer = std::chrono::milliseconds(0);
@@ -175,7 +176,6 @@ namespace BM_Network {
                             physical_controller.sendData(new_encoder.getCodedBytes());
                         } else {
                             application_controller.sendMessage(addresses[frame.getDestination()], addresses[frame.getSender()], frame.getData());
-                            application_controller.sendEvent(Event::ACK);
 
                             Frame a_frame(frame.getSender(), address, FrameType::AFrame, 0);
                             Encoder new_encoder(a_frame.getFrame(), a_frame.getSize());
@@ -201,6 +201,8 @@ namespace BM_Network {
                             Encoder new_encoder(frame.getFrame(), frame.getSize());
                             physical_controller.sendData(new_encoder.getCodedBytes());
                         } else {
+                            application_controller.sendEvent(Event::CONNECT_REQUEST);
+
                             if (frame.getSender() == -2) {
                                 std::string new_info = frame.getData();
                                 new_info.push_back(-2);
@@ -272,6 +274,7 @@ namespace BM_Network {
                             users.clear();
                             addresses.clear();
 
+                            application_controller.sendEvent(DISCONNECT_REQUEST);
                             application_controller.sendEvent(DISRUPTION);
                         }
                         break;
@@ -292,8 +295,6 @@ namespace BM_Network {
     DataLinkController<DataType, Encoder, Decoder>::
     connectToRing(const std::string& user_name) {
         disconnect_timeout = false;
-
-        application_controller.sendEvent(Event::CONNECT_REQUEST);
 
         this_user_name = user_name;
 
@@ -350,7 +351,6 @@ namespace BM_Network {
 
     template<typename DataType, typename Encoder, typename Decoder>
     void DataLinkController<DataType, Encoder, Decoder>::unlinkRing() {
-        application_controller.sendEvent(DISCONNECT_REQUEST);
         Frame uframe(0x7F, address, UFrame);
         auto counter = users.size();
         while (counter <= ack_counter) {                                                                                                                                                                    ++ack_counter;

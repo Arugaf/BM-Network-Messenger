@@ -38,6 +38,10 @@ int main() {
     dl_cl.sendData(encoder3.getCodedBytes());
     std::cout << std::endl;
 
+    dl_cl.sendMessage("Abc", "Abc", "Pruvet!");
+    dl_cl.sendMessage("Abc", "Abc", "Pruvet!");
+
+
     return 0;
 }
 
