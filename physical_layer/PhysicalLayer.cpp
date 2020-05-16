@@ -2,88 +2,83 @@
 // Created by vladimir on 10.05.20.
 //
 
-#include <thread>
 #include "PhysicalLayer.h"
+#include "../../../../../Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.16.27023/include/thread"
 
 void PhysicalLayer::bindDatalinkLayer(IDatalink *receiver) {
     this->datalinkLayer = receiver;
-    DCB
 }
 
 void PhysicalLayer::read() {
-    try {
-        while (true) {
-            if (serial_port_read.IsOpen()) {
-                std::getline(serial_port_read, buffer_read);
-                datalinkLayer->sendData(buffer_read.c_str());
-            } else {
-                datalinkLayer->connLostCallback(PortType(READ));
-            }
+    unsigned char buf[4096];
+    while (true) {
+        if (RS232_IsDCDEnabled(portNumberRead) == 0) {
+            datalinkLayer->connLostCallback(PortType(READ));
+            return;
         }
-    }
-    catch (std::ifstream::failure &failure) {
-        std::cerr << "Exception happened: " << failure.what() << "\n"
-                  << "Error bits are: "
-                  << "\nfailbit: " << serial_port_read.fail()
-                  << "\neofbit: " << serial_port_read.eof()
-                  << "\nbadbit: " << serial_port_read.bad() << std::endl;
-        datalinkLayer->connLostCallback(PortType(READ));
+        int n = RS232_PollComport(portNumberRead, buf, 4095);
+        if (n > 0) {
+            buf[n] = 0;
+            datalinkLayer->sendData((char *) buf);
+        }
+#ifdef _WIN32
+        Sleep(100);
+#else
+        usleep(100000);  /* sleep for 100 milliSeconds */
+#endif
     }
 }
 
 PhysicalLayer::~PhysicalLayer() {
-    serial_port_write.Close();
-    serial_port_read.Close();
+
 }
 
 void PhysicalLayer::sendData(const PhysicalLayer::byte *data) {
-    try {
-        if (serial_port_write.IsOpen()) {
-            serial_port_write << data;
-        } else {
-            datalinkLayer->connLostCallback(PortType(WRITE));
-        }
-    }
-
-    catch (std::ofstream::failure &failure) {
-        std::cerr << "Exception happened: " << failure.what() << "\n"
-                  << "Error bits are: "
-                  << "\nfailbit: " << serial_port_write.fail()
-                  << "\neofbit: " << serial_port_write.eof()
-                  << "\nbadbit: " << serial_port_write.bad() << std::endl;
+    if (RS232_IsDCDEnabled(portNumberWrite == 0)) {
         datalinkLayer->connLostCallback(PortType(WRITE));
+        return;
     }
+    RS232_cputs(portNumberWrite, data);
+#ifdef _WIN32
+    Sleep(100);
+#else
+    usleep(100000);  /* sleep for 1 Second */
+#endif
 }
 
-OpenPortCallbackMessage PhysicalLayer::openPort(std::string portName, const PortType &portType) {
-    try {
-        switch (portType) {
-            case PortType::READ: {
-                serial_port_read.Open(portName);
+OpenPortCallbackMessage PhysicalLayer::openPort(const char *portName, const PortType &portType) {
+    switch (portType) {
+        case PortType::READ: {
+            int bdrate = 9600;
+            char mode[] = {'8', 'N', '1', 0};
 
-                //Start listening port, blocking current thread
-                this->physical_layer_thread=new std::thread(&PhysicalLayer::read, this);
+            portNumberRead = RS232_GetPortnr(portName);
+
+            if (portNumberRead == -1) {
+                return OpenPortCallbackMessage(OpenFailed);
             }
-            case PortType::WRITE: {
-                serial_port_write.Open(portName);
+            if (RS232_OpenComport(portNumberRead, bdrate, mode, 0)) {
+                std::cout << "Can't open port:COM" << portNumberRead << std::endl;
+                return OpenPortCallbackMessage(AlreadyOpen);
             }
+            //Start listening loop
+            read();
+            break;
+        }
+        case PortType::WRITE: {
+            int bdrate = 9600;
+            char mode[] = {'8', 'N', '1', 0};
+
+            portNumberWrite = RS232_GetPortnr(portName);
+
+            if (portNumberWrite == -1) {
+                return OpenPortCallbackMessage(OpenFailed);
+            }
+            if (RS232_OpenComport(portNumberWrite, bdrate, mode, 0)) {
+                std::cout << "Can't open port:COM" << portNumberWrite << std::endl;
+                return OpenPortCallbackMessage(AlreadyOpen);
+            }
+            break;
         }
     }
-    catch (SerialPort::OpenFailed &error) {
-        std::cerr << "The serial ports did not open correctly.\n" << error.what() << std::endl;
-        return OpenPortCallbackMessage(OpenFailed);
-    }
-    catch (SerialPort::AlreadyOpen &error) {
-        std::cerr << "The serial is already used.\n" << error.what() << std::endl;
-        return OpenPortCallbackMessage(AlreadyOpen);
-
-    }
-    catch (SerialPort::NotOpen &error) {
-        std::cerr << "The serial ports did not open correctly.\n" << error.what() << std::endl;
-        return OpenPortCallbackMessage(OpenFailed);
-    }
-}
-
-void PhysicalLayer::waitMainThread() {
-    this->physical_layer_thread->join();
 }

@@ -1,7 +1,8 @@
 #include <iostream>
+#include "physical_layer/PhysicalLayer.h"
 
-#include "Controller.h"
-#include "Application.h"
+//#include "Controller.h"
+//#include "Application.h"
 
 //TODO:: transformator, кадры, контроль и обработка ошибок, управление соединением, интерфейсы, наследники
 
@@ -10,7 +11,7 @@ class DatalinkLayerStub : virtual public IDatalink{
     typedef char byte;
 public:
     void sendData(const byte *data) override{
-        physicalLayer->sendData(data);
+        std::cout<<"received : "<<data;
     }
     void connLostCallback(const PortType &portType) override{
         std::cout<<"Connection "<<portType<<" is losted"<<std::endl;
@@ -71,7 +72,8 @@ int main() {
 
     phc.bindDatalinkLayer((IDatalink *) &dl);
 
-    phc.openPort("COM1", PortType(WRITE));
+    phc.openPort("COM2", PortType(READ));
+    phc.sendData("Hello from Vova");
 //    phc.bindDatalinkLayer((IPhysical*) &dl);
 
 //    app.bindDatalinkLayer()

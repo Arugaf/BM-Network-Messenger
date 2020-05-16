@@ -6,11 +6,12 @@
 #define BM_NETWORK_MESSENGER_PHYSICALLAYERCONTROLLER_H
 
 #include "IPhysical.h"
-#include <IDatalink.h>
+#include "../data_link_layer/include/IDatalink.h"
 
 #include <iostream>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
+#include <thread>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -34,20 +35,17 @@ public:
     //here we receive data from DataLinkLayer
     void sendData(const byte *) override;
 
-    OpenPortCallbackMessage openPort(std::string portName, const PortType &portType) override;
+    OpenPortCallbackMessage openPort(const char* portName, const PortType &portType) override;
 
-    void waitMainThread();
+//    void waitMainThread();
 
 private:
     IDatalink *datalinkLayer = nullptr;
 
-    LibSerial::SerialStream serial_port_read;
-    LibSerial::SerialStream serial_port_write;
+    int portNumberRead;
+    int portNumberWrite;
 
-    std::string buffer_read = "";
-
-    std::thread *physical_layer_thread;
-
+//    std::thread *physical_layer_thread;
     void read();
 };
 

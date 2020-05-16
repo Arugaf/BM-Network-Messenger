@@ -13,7 +13,7 @@ class IPhysical {
 public:
     virtual void sendData(const byte* data) = 0;
 
-    virtual OpenPortCallbackMessage openPort(std::string portName, const PortType &portType) = 0;
+    virtual OpenPortCallbackMessage openPort(const char* portName, const PortType &portType) = 0;
 };
 
 #endif //BM_NETWORK_MESSENGER_IPHYSICAL_H
