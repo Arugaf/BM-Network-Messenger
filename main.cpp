@@ -9,54 +9,34 @@
 
 
 int main() {
-    /*std::string kekus;
-
-    std::cin >> kekus;
-
-    BM_Network::IFrame* frame = new BM_Network::Frame(31, 3, 1, kekus.size(), kekus.c_str());
-
-    dynamic_cast<BM_Network::Frame*>(frame)->visualize();
-
-    std::cout << std::endl;
-
-    BM_Network::HammingEncoder encode(frame->getFrame(), frame->getSize());
-    encode.visualize();
-    std::cout << std::endl;
-    encode.spoilByte(20);
-
-    BM_Network::HammingDecoder<BM_Network::byte> decode(encode.getCodedBytes());
-    decode.visualize();
-    std::cout << std::endl;
-
-    std::cout << std::string(decode.getDecodedBytes()) << std::endl;
-    std::cout << std::endl;
-
-    BM_Network::Frame frame1(decode.getDecodedBytes(), decode.getSize());
-    frame1.visualize();
-
-    std::cout << std::endl << frame1.getData();
-
-    delete frame;*/
-
     BM_Network::ApplicationControllerDL app_cl;
-    //app_cl.sendEvent(BM_Network::ACK);
-    //app_cl.sendMessage("kekus", "omegus", "cheburekus");
 
     BM_Network::PhysicalControllerDL phc_cl;
-    //phc_cl.sendData("lolmega");
 
+    BM_Network::byte bytes[] = {'A', 'b', 'c'};
+    BM_Network::Frame frame(0x7F, -2, BM_Network::FrameType::LFrame, 3, bytes);
+    BM_Network::HammingEncoder encoder(frame.getFrame(), frame.getSize());
     BM_Network::DataLinkController dl_cl(phc_cl, app_cl);
-    //dl_cl.sendMessage("user1", "user2", "omegalul kekus cheburekus");
-    std::string kek("omegalul");
-    BM_Network::Frame iframe(0x2, 0x1, BM_Network::InfFrame, kek.size(), kek.c_str());
-    BM_Network::HammingEncoder iencoder(iframe.getFrame(), iframe.getSize());
-    //iencoder.visualize();
-    BM_Network::HammingDecoder<BM_Network::byte> idecoder(iencoder.getCodedBytes());
-    //std::cout << std::endl << std::endl;
-    //idecoder.visualize();
-    dl_cl.sendData(iencoder.getCodedBytes());
+    dl_cl.sendData(encoder.getCodedBytes());
+    std::cout << std::endl;
 
-    std::cout << dl_cl.connectPorts("kek", "cheburek");
+    std::string msg = "Pruvet!";
+    BM_Network::Frame msg1frame(0x01, 0x01, BM_Network::FrameType::InfFrame, msg.size(), msg.c_str());
+    BM_Network::HammingEncoder msg1encoder(msg1frame.getFrame(), msg1frame.getSize());
+    dl_cl.sendData(msg1encoder.getCodedBytes());
+    std::cout << std::endl;
+
+    BM_Network::byte bytes2[] = {'B', 'o', 'b', 'i', 'k'};
+    BM_Network::Frame frame2(0x7F, -2, BM_Network::FrameType::LFrame, 5, bytes2);
+    BM_Network::HammingEncoder encoder2(frame2.getFrame(), frame2.getSize());
+    dl_cl.sendData(encoder2.getCodedBytes());
+    std::cout << std::endl;
+
+    BM_Network::byte bytes3[] = {'E', 'd', 'f', -2, 0x03, 'B', 'o', 'b', 'i', 'k', -2, 0x02};
+    BM_Network::Frame fram3(0x7F, 0x03, BM_Network::FrameType::LFrame, 12, bytes3);
+    BM_Network::HammingEncoder encoder3(fram3.getFrame(), fram3.getSize());
+    dl_cl.sendData(encoder3.getCodedBytes());
+    std::cout << std::endl;
 
     return 0;
 }

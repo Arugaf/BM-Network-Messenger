@@ -27,7 +27,7 @@ namespace BM_Network {
              typename restriction = typename std::enable_if<std::is_fundamental<data_type>::value>::type>
     class HammingEncoder : public IEncoder {
     public:
-        HammingEncoder(const data_type* data, int data_size);
+        HammingEncoder(const data_type* data, size_t data_size);
         ~HammingEncoder() override;
 
         [[nodiscard]] const byte* getCodedBytes() const override;
@@ -48,7 +48,7 @@ namespace BM_Network {
     };
 
     template<typename data_type, unsigned int R, typename restriction>
-    HammingEncoder<data_type, R, restriction>::HammingEncoder(const data_type* data, const int data_size) :
+    HammingEncoder<data_type, R, restriction>::HammingEncoder(const data_type* data, const size_t data_size) :
                             bits(0),
                             overhead(static_cast<short>(data_size * sizeof(data_type) * 8 * multiplier) % 8),
                             size(data_size * sizeof(data_type) * multiplier) {
