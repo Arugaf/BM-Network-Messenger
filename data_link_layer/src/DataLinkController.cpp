@@ -29,7 +29,7 @@ void BM_Network::ApplicationControllerDL::addUser(const std::string& user) {
 }
 
 void BM_Network::ApplicationControllerDL::injectImpl(const std::shared_ptr<IApplicationLayerController>& impl) {
-
+    application_controller_impl = impl;
 }
 
 BM_Network::PhysicalControllerDL::PhysicalControllerDL() {
@@ -48,4 +48,8 @@ bool BM_Network::PhysicalControllerDL::connectPorts(const std::string& input_por
 
 void BM_Network::PhysicalControllerDL::disconnectPorts() {
     physical_controller_impl->disconnectPorts();
+}
+
+void BM_Network::PhysicalControllerDL::injectImpl(const std::shared_ptr<IPhysicalLayerController>& impl) {
+    physical_controller_impl = impl;
 }

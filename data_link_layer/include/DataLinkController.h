@@ -50,7 +50,7 @@ namespace BM_Network {
         void sendData(const byte* data);
         bool connectPorts(const std::string& input_port, const std::string& output_port);
         void disconnectPorts();
-        void injectImpl(const std::shared_ptr<IApplicationLayerController>& impl);
+        void injectImpl(const std::shared_ptr<IPhysicalLayerController>& impl);
 
     private:
         std::shared_ptr<IPhysicalLayerController> physical_controller_impl;
@@ -60,8 +60,8 @@ namespace BM_Network {
     class DataLinkController : virtual public IDataLinkControllerPhysical, virtual public IDataLinkControllerApplication {
     public:
         DataLinkController(PhysicalControllerDL& ph_cl, ApplicationControllerDL& ap_cl);
-        void addApplicationController(std::shared_ptr<IApplicationLayerController> a_c);
-        void addPhysicalController(std::shared_ptr<IPhysicalLayerController> p_c);
+        void addApplicationController(const std::shared_ptr<IApplicationLayerController>& a_c);
+        void addPhysicalController(const std::shared_ptr<IPhysicalLayerController>& p_c);
         void sendMessage(const std::string& receiver, const std::string& sender, const std::string& message) override;
         void sendData(const byte* data) override;
         bool connectPorts(const std::string& input_port, const std::string& output_port) override;
@@ -365,6 +365,18 @@ namespace BM_Network {
         addresses.clear();
 
         application_controller.sendEvent(DISCONNECT);
+    }
+
+    template<typename DataType, typename Encoder, typename Decoder>
+    void DataLinkController<DataType, Encoder, Decoder>::addApplicationController(
+            const std::shared_ptr<IApplicationLayerController>& a_c) {
+        application_controller.injectImpl(a_c);
+    }
+
+    template<typename DataType, typename Encoder, typename Decoder>
+    void DataLinkController<DataType, Encoder, Decoder>::addPhysicalController(
+            const std::shared_ptr<IPhysicalLayerController>& p_c) {
+        physical_controller.injectImpl(p_c);
     }
 }
 
