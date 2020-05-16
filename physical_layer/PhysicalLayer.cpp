@@ -63,7 +63,6 @@ OpenPortCallbackMessage PhysicalLayer::openPort(const char *portName, const Port
             }
             //Start listening loop
             std::thread a(&PhysicalLayer::read,this);
-            a.detach();
             break;
         }
         case PortType::WRITE: {
