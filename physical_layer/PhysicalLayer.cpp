@@ -3,7 +3,6 @@
 //
 
 #include "PhysicalLayer.h"
-#include "../../../../../Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.16.27023/include/thread"
 
 void PhysicalLayer::bindDatalinkLayer(IDatalink *receiver) {
     this->datalinkLayer = receiver;
@@ -12,7 +11,7 @@ void PhysicalLayer::bindDatalinkLayer(IDatalink *receiver) {
 void PhysicalLayer::read() {
     unsigned char buf[4096];
     while (true) {
-        if (RS232_IsDCDEnabled(portNumberRead) == 0) {
+        if (RS232_IsDSREnabled(portNumberRead) == 0) {
             datalinkLayer->connLostCallback(PortType(READ));
             return;
         }
@@ -30,11 +29,12 @@ void PhysicalLayer::read() {
 }
 
 PhysicalLayer::~PhysicalLayer() {
-
+    RS232_CloseComport(portNumberRead);
+    RS232_CloseComport(portNumberWrite);
 }
 
 void PhysicalLayer::sendData(const PhysicalLayer::byte *data) {
-    if (RS232_IsDCDEnabled(portNumberWrite == 0)) {
+    if (RS232_IsDSREnabled(portNumberWrite == 0)) {
         datalinkLayer->connLostCallback(PortType(WRITE));
         return;
     }
