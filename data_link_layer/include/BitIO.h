@@ -5,7 +5,7 @@
 #ifndef BM_NETWORK_MESSENGER_BITIO_H
 #define BM_NETWORK_MESSENGER_BITIO_H
 
-#include "BM_Network.h"
+#include "utils.h"
 
 namespace BM_Network {
     class BitIO {

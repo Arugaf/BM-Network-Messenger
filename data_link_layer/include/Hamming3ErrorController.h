@@ -5,7 +5,7 @@
 #ifndef BM_NETWORK_MESSENGER_HAMMING3ERRORCONTROLLER_H
 #define BM_NETWORK_MESSENGER_HAMMING3ERRORCONTROLLER_H
 
-#include "BM_Network.h"
+#include "utils.h"
 
 #include <bitset>
 #include <iostream>

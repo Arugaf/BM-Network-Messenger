@@ -15,5 +15,6 @@ void BM_Network::BitIO::writeBit(BM_Network::byte* bytes, BM_Network::byte bit, 
 }
 
 BM_Network::byte BM_Network::BitIO::readBit(const BM_Network::byte* bytes, BM_Network::size_t index) {
-    return (static_cast<unsigned short>(bytes[index / 8] >> (index % 8)) & 1u);
+    //return (static_cast<unsigned short>(bytes[index / 8] >> (index % 8)) & 1u);
+    return std::bitset<8>(bytes[index / 8])[index % 8];
 }

@@ -5,7 +5,7 @@
 #ifndef BM_NETWORK_MESSENGER_FRAME_H
 #define BM_NETWORK_MESSENGER_FRAME_H
 
-#include "BM_Network.h"
+#include "utils.h"
 
 #include <algorithm>
 #include <bitset>

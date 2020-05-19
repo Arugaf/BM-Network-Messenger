@@ -19,7 +19,11 @@
 #define PHYSICAL_LAYER_POINTER // TODO:
 #endif
 
-#include "BM_Network.h"
+#include "ApplicationControllerDL.h"
+#include "IDataLinkControllerApplication.h"
+#include "IDataLinkControllerPhysical.h"
+#include "PhysicalControllerDL.h"
+#include "utils.h"
 
 #include "HammingDecoder.hpp"
 #include "HammingEncoder.hpp"
@@ -32,30 +36,6 @@
 #include <thread>
 
 namespace BM_Network {
-    class ApplicationControllerDL {
-    public:
-        explicit ApplicationControllerDL();
-        void sendMessage(const std::string& receiver, const std::string& sender, const std::string& message);
-        void sendEvent(Event event);
-        void addUser(const std::string& user);
-        void injectImpl(const std::shared_ptr<IApplicationLayerController>& impl);
-
-    private:
-        std::shared_ptr<IApplicationLayerController> application_controller_impl;
-    };
-
-    class PhysicalControllerDL {
-    public:
-        explicit PhysicalControllerDL();
-        void sendData(const byte* data);
-        bool connectPorts(const std::string& input_port, const std::string& output_port);
-        void disconnectPorts();
-        void injectImpl(const std::shared_ptr<IPhysicalLayerController>& impl);
-
-    private:
-        std::shared_ptr<IPhysicalLayerController> physical_controller_impl;
-    };
-
     template<typename DataType = byte, typename Encoder = HammingEncoder<DataType>, typename Decoder = HammingDecoder<DataType>>
     class DataLinkController : virtual public IDataLinkControllerPhysical, virtual public IDataLinkControllerApplication {
     public:
@@ -400,3 +380,4 @@ namespace BM_Network {
 #endif //BM_NETWORK_MESSENGER_DATALINKCONTROLLER_H
 
 //TODO: дисконнект, интерфейс для аппликейшн лэйер
+// TODO: .inl && контроллеры убрать

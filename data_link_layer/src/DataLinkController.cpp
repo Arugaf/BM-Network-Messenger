@@ -2,12 +2,7 @@
 // Created by arugaf on 10.05.2020.
 //
 
-#include <DataLinkController.h>
-
 #include "DataLinkController.h"
-#include "HammingDecoder.hpp"
-#include "HammingEncoder.hpp"
-#include "Frame.h"
 
 BM_Network::ApplicationControllerDL::ApplicationControllerDL() {
 #ifndef APPLICATION_LAYER
