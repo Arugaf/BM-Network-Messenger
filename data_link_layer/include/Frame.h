@@ -46,6 +46,8 @@ namespace BM_Network {
         byte* memory_area;
         size_t frame_size;
     };
+
+    // TODO: достать информацию до разделителя
 }
 
 #endif //BM_NETWORK_MESSENGER_FRAME_H

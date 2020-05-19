@@ -15,23 +15,16 @@
 #include <type_traits>
 
 namespace BM_Network {
-    class IEncoder {
-    public:
-        [[nodiscard]] virtual const byte* getCodedBytes() const = 0;
-        [[nodiscard]] virtual size_t getSize() const = 0;
-        virtual ~IEncoder() = default;
-    };
-
     template<typename data_type,
              unsigned int R = 3,
              typename restriction = typename std::enable_if<std::is_fundamental<data_type>::value>::type>
-    class HammingEncoder : public IEncoder {
+    class HammingEncoder {
     public:
         HammingEncoder(const data_type* data, size_t data_size);
-        ~HammingEncoder() override;
+        ~HammingEncoder();
 
-        [[nodiscard]] const byte* getCodedBytes() const override;
-        [[nodiscard]] size_t getSize() const override;
+        [[nodiscard]] const byte* getCodedBytes() const;
+        [[nodiscard]] size_t getSize() const;
 
         void visualize() const;
 

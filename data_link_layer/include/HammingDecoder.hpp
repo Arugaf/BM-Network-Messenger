@@ -16,25 +16,16 @@
 #include <type_traits>
 
 namespace BM_Network {
-    template<typename T>
-    class IDecoder {
-    public:
-        [[nodiscard]] virtual const T* getDecodedBytes() const = 0;
-        [[nodiscard]] virtual size_t getSize() const = 0;
-        [[nodiscard]] virtual bool isError() const = 0;
-        virtual ~IDecoder() = default;
-    };
-
     template<typename T, unsigned int R = 3, typename error_controller = Hamming3ErrorController,
              typename restriction = typename std::enable_if<std::is_fundamental<T>::value>::type>
-    class HammingDecoder : public IDecoder<T> {
+    class HammingDecoder {
     public:
         explicit HammingDecoder(const byte* data, byte stop_byte = 0xFF);
-        ~HammingDecoder() override;
+        ~HammingDecoder();
 
-        [[nodiscard]] const T* getDecodedBytes() const override;
-        [[nodiscard]] size_t getSize() const override;
-        [[nodiscard]] bool isError() const override;
+        [[nodiscard]] const T* getDecodedBytes() const;
+        [[nodiscard]] size_t getSize() const;
+        [[nodiscard]] bool isError() const;
 
         void visualize() const;
     private:
@@ -73,7 +64,7 @@ namespace BM_Network {
             ++bits;
 
             if (!(bits % length)) {
-                error = error_controller_impl->checkErrors(check_byte);
+                error = error || error_controller_impl->checkErrors(check_byte);
                 check_byte = 0;
             }
         }

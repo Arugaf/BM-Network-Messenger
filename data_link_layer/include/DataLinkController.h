@@ -85,7 +85,7 @@ namespace BM_Network {
         std::unordered_map<std::string, byte> users;
         std::map<byte, std::string> addresses;
 
-        void handleFrameEvent(Frame& frame, std::unique_ptr<IDecoder<DataType>> decoder, const byte* data);
+        void handleFrameEvent(Frame& frame, std::unique_ptr<HammingDecoder<DataType>> decoder, const byte* data);
         void maintainConnection();
     };
 
@@ -101,7 +101,7 @@ namespace BM_Network {
     BM_Network::DataLinkController<DataType, Encoder, Decoder>::
     sendMessage(const std::string& receiver, const std::string& sender, const std::string& message) {
         Frame frame(users[receiver], users[sender], InfFrame, message.size(), message.c_str());
-        std::unique_ptr<IEncoder> encoder = std::make_unique<Encoder>(frame.getFrame(), frame.getSize());
+        auto encoder = std::make_unique<Encoder>(frame.getFrame(), frame.getSize());
         physical_controller.sendData(encoder->getCodedBytes());
 
         auto timer = std::chrono::milliseconds(0);
@@ -131,7 +131,7 @@ namespace BM_Network {
     }
 
     template<typename DataType, typename Encoder, typename Decoder>
-    void DataLinkController<DataType, Encoder, Decoder>::handleFrameEvent(Frame& frame, std::unique_ptr<IDecoder<DataType>> decoder, const byte* data) { ack = true; Frame last_frame("", 0);
+    void DataLinkController<DataType, Encoder, Decoder>::handleFrameEvent(Frame& frame, std::unique_ptr<HammingDecoder<DataType>> decoder, const byte* data) { ack = true; Frame last_frame("", 0);
         if (!connected && disconnect_timeout && frame.getType() != LFrame) {
             physical_controller.sendData(data);
         } else if (!disconnect_timeout && !connected) {
@@ -328,7 +328,7 @@ namespace BM_Network {
     template<typename DataType, typename Encoder, typename Decoder>
     void DataLinkController<DataType, Encoder, Decoder>::maintainConnection() {
         Frame frame(0x7F, address, LFrame, 0);
-        std::unique_ptr<IEncoder> encoder = std::make_unique<Encoder>(frame.getFrame(), frame.getSize());
+        auto encoder = std::make_unique<Encoder>(frame.getFrame(), frame.getSize());
         physical_controller.sendData(encoder->getCodedBytes());
 
         auto timer = std::chrono::milliseconds(0);
