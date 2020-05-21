@@ -45,6 +45,7 @@ namespace BM_Network {
         void sendMessage(const std::string& receiver, const std::string& sender, const std::string& message) override;
         void sendData(const byte* data) override;
         bool connectPorts(const std::string& input_port, const std::string& output_port) override;
+        void startListeningOnReadPort() override;
         bool connectToRing(const std::string& user_name) override;
         void unlinkRing() override;
         void connLostCallback(const PortType &portType) override;
@@ -371,6 +372,11 @@ namespace BM_Network {
         addresses.clear();
 
         application_controller.sendEvent(DISRUPTION);
+    }
+
+    template<typename DataType, typename Encoder, typename Decoder>
+    void DataLinkController<DataType, Encoder, Decoder>::startListeningOnReadPort() {
+        physical_controller.startListeningOnReadPort();
     }
 }
 

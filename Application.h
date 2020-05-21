@@ -6,7 +6,7 @@
 #define PROJECT_APPLICATION_H
 
 #include "data_link_layer/include/Controller.h"
-#include "physical_layer/PhysicalLayer.h"
+#include "physical_layer/PhysicalController.h"
 
 class Application {
 

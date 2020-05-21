@@ -2,6 +2,8 @@
 // Created by arugaf on 10.05.2020.
 //
 
+#include <PhysicalControllerDL.h>
+
 #include "DataLinkController.h"
 
 BM_Network::ApplicationControllerDL::ApplicationControllerDL() {
@@ -47,4 +49,8 @@ void BM_Network::PhysicalControllerDL::disconnectPorts() {
 
 void BM_Network::PhysicalControllerDL::injectImpl(const std::shared_ptr<IPhysicalLayerController>& impl) {
     physical_controller_impl = impl;
+}
+
+void BM_Network::PhysicalControllerDL::startListeningOnReadPort() {
+    physical_controller_impl->startListeningOnReadPort();
 }

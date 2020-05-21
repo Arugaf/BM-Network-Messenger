@@ -13,6 +13,7 @@ namespace BM_Network {
         void sendData(const byte* data);
         bool connectPorts(const std::string& input_port, const std::string& output_port);
         void disconnectPorts();
+        void startListeningOnReadPort();
         void injectImpl(const std::shared_ptr<IPhysicalLayerController>& impl);
 
     private:

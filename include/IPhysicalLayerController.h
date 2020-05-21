@@ -12,6 +12,8 @@ namespace BM_Network {
 
         bool connectPorts(const std::string& input_port, const std::string& output_port) override = 0;
 
+        void startListeningOnReadPort() override = 0;
+
         virtual void disconnectPorts() = 0;
 
         ~IPhysicalLayerController() override = default;
@@ -23,6 +25,10 @@ namespace BM_Network {
     public:
         void sendData(const byte* data) override {
             std::cout << "Data received, address is: " << &data << std::endl;
+        }
+
+        void startListeningOnReadPort() override {
+            std::cout << "startListeningOnReadPort" << std::endl;
         }
 
         bool connectPorts(const std::string& input_port, const std::string& output_port) override {
