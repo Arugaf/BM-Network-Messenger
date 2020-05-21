@@ -30,6 +30,12 @@ namespace BM_Network {
         Read,
         Write
     };
+
+    enum OpenPortCallbackMessage{
+        Success,
+        OpenFailed,
+        AlreadyOpen
+    };
 }
 
 #endif //BM_NETWORK_MESSENGER_UTILS_H
