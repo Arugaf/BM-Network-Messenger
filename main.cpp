@@ -1,3 +1,4 @@
+﻿<<<<<<< HEAD
 #include <iostream>
 
 #include "HammingEncoder.hpp"
@@ -63,5 +64,4 @@ int main() {
     return 0;
 }
 
-
-
+>>>>>>> 32d12b9... Add files via upload
