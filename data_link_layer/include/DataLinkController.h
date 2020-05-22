@@ -43,7 +43,7 @@ namespace BM_Network {
         void addApplicationController(const std::shared_ptr<IApplicationLayerController>& a_c);
         void addPhysicalController(const std::shared_ptr<IPhysicalLayerController>& p_c);
         void sendMessage(const std::string& receiver, const std::string& sender, const std::string& message) override;
-        void sendData(const byte* data) override;
+        void sendData(const byte* data, size_t size) override;
         bool connectPorts(const std::string& input_port, const std::string& output_port) override;
         void startListeningOnReadPort() override;
         bool connectToRing(const std::string& user_name) override;
@@ -83,7 +83,7 @@ namespace BM_Network {
     sendMessage(const std::string& receiver, const std::string& sender, const std::string& message) {
         Frame frame(users[receiver], users[sender], InfFrame, message.size(), message.c_str());
         auto encoder = std::make_unique<Encoder>(frame.getFrame(), frame.getSize());
-        physical_controller.sendData(encoder->getCodedBytes());
+        physical_controller.sendData(encoder->getCodedBytes(), encoder->getSize() );
 
         auto timer = std::chrono::milliseconds(0);
         auto timeout_count = 0;
@@ -100,21 +100,25 @@ namespace BM_Network {
             }
             ++timeout_count;
             timer = std::chrono::milliseconds(0);
-            physical_controller.sendData(encoder->getCodedBytes());
+            physical_controller.sendData(encoder->getCodedBytes(), encoder->getSize());
         }
     }
 
     template<typename DataType, typename Encoder, typename Decoder>
-    void BM_Network::DataLinkController<DataType, Encoder, Decoder>::sendData(const BM_Network::byte* data) {
+    void BM_Network::DataLinkController<DataType, Encoder, Decoder>::sendData(const BM_Network::byte* data, size_t size) {
         auto decoder = std::make_unique<Decoder>(data);
         Frame frame(decoder->getDecodedBytes(), decoder->getSize());
         handleFrameEvent(frame, std::move(decoder), data);
     }
 
     template<typename DataType, typename Encoder, typename Decoder>
-    void DataLinkController<DataType, Encoder, Decoder>::handleFrameEvent(Frame& frame, std::unique_ptr<HammingDecoder<DataType>> decoder, const byte* data) { ack = true; Frame last_frame("", 0);
+    void DataLinkController<DataType, Encoder, Decoder>::handleFrameEvent(Frame& frame, std::unique_ptr<HammingDecoder<DataType>> decoder, const byte* data) {
+        Encoder enc(decoder->getDecodedBytes(),decoder->getSize());
+
+        ack = true;
+        Frame last_frame("", 0);
         if (!connected && disconnect_timeout && frame.getType() != LFrame) {
-            physical_controller.sendData(data);
+            physical_controller.sendData(data, enc.getSize());
         } else if (!disconnect_timeout && !connected) {
             if (frame.getSender() == -2) {
                 address = 0x01;
@@ -147,20 +151,20 @@ namespace BM_Network {
             connected = true;
         } else if (connected) {
             if (frame.getDestination() != address && frame.getDestination() != 0x7F) {
-                physical_controller.sendData(data);
+                physical_controller.sendData(data, enc.getSize());
             } else if (frame.getDestination() == address) {
                 switch (frame.getType()) {
                     case InfFrame: {
                         if (decoder->isError()) {
                             Frame new_frame(frame.getSender(), address, FrameType::RFrame, 0);
                             Encoder new_encoder(new_frame.getFrame(), new_frame.getSize());
-                            physical_controller.sendData(new_encoder.getCodedBytes());
+                            physical_controller.sendData(new_encoder.getCodedBytes(), new_encoder.getSize());
                         } else {
                             application_controller.sendMessage(addresses[frame.getDestination()], addresses[frame.getSender()], frame.getData());
 
                             Frame a_frame(frame.getSender(), address, FrameType::AFrame, 0);
                             Encoder new_encoder(a_frame.getFrame(), a_frame.getSize());
-                            physical_controller.sendData(new_encoder.getCodedBytes());
+                            physical_controller.sendData(new_encoder.getCodedBytes(), new_encoder.getSize());
                         }
                         break;
                     }
@@ -170,7 +174,7 @@ namespace BM_Network {
                         break;
                     }
                     case RFrame: {
-                        physical_controller.sendData(last_frame.getFrame());
+                        physical_controller.sendData(last_frame.getFrame(), enc.getSize());
                         break;
                     }
                 }
@@ -180,7 +184,7 @@ namespace BM_Network {
                         if (frame.getData().empty()) {
                             Frame a_frame(frame.getSender(), address, FrameType::AFrame, 0);
                             Encoder new_encoder(frame.getFrame(), frame.getSize());
-                            physical_controller.sendData(new_encoder.getCodedBytes());
+                            physical_controller.sendData(new_encoder.getCodedBytes(), new_encoder.getSize());
                         } else {
                             application_controller.sendEvent(Event::CONNECT_REQUEST);
 
@@ -203,12 +207,12 @@ namespace BM_Network {
                                 application_controller.addUser(frame.getData());
 
                                 Encoder encoder(new_frame.getFrame(), new_frame.getSize());
-                                physical_controller.sendData(encoder.getCodedBytes());
+                                physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
                                 // new_frame.visualize();
 
                                 Frame a_frame(new_frame.getSender(), address, FrameType::AFrame, 0);
                                 Encoder new_encoder(a_frame.getFrame(), a_frame.getSize());
-                                physical_controller.sendData(new_encoder.getCodedBytes());
+                                physical_controller.sendData(new_encoder.getCodedBytes(), new_encoder.getSize());
                             } else {
                                 std::string str;
                                 bool is_address = false;
@@ -229,11 +233,11 @@ namespace BM_Network {
                                     }
                                 }
 
-                                physical_controller.sendData(data);
+                                physical_controller.sendData(data, enc.getSize());
 
                                 Frame a_frame(frame.getSender(), address, FrameType::AFrame, 0);
                                 Encoder new_encoder(a_frame.getFrame(), a_frame.getSize());
-                                physical_controller.sendData(new_encoder.getCodedBytes());
+                                physical_controller.sendData(new_encoder.getCodedBytes(), new_encoder.getSize());
                             }
                         }
                         break;
@@ -241,11 +245,11 @@ namespace BM_Network {
 
                     case UFrame: {
                         if (frame.getSender() != address) {
-                            physical_controller.sendData(data);
+                            physical_controller.sendData(data, enc.getSize());
 
                             Frame a_frame(frame.getSender(), address, FrameType::AFrame, 0);
                             Encoder new_encoder(a_frame.getFrame(), a_frame.getSize());
-                            physical_controller.sendData(new_encoder.getCodedBytes());
+                            physical_controller.sendData(new_encoder.getCodedBytes(), new_encoder.getSize());
 
                             connected = false;
                             disconnect_timeout = true;
@@ -281,7 +285,7 @@ namespace BM_Network {
 
         Frame frame(0x7F, -2, FrameType::LFrame, user_name.size(), user_name.c_str());
         Encoder encoder(frame.getFrame(), frame.getSize());
-        physical_controller.sendData(encoder.getCodedBytes());
+        physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
 
         auto timer = std::chrono::milliseconds(0);
         auto timeout_count = 0;
@@ -296,7 +300,7 @@ namespace BM_Network {
             }
             ++timeout_count;
             timer = std::chrono::milliseconds(0);
-            physical_controller.sendData(encoder.getCodedBytes());
+            physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
         }
         disconnect_timeout = true;
 
@@ -310,7 +314,7 @@ namespace BM_Network {
     void DataLinkController<DataType, Encoder, Decoder>::maintainConnection() {
         Frame frame(0x7F, address, LFrame, 0);
         auto encoder = std::make_unique<Encoder>(frame.getFrame(), frame.getSize());
-        physical_controller.sendData(encoder->getCodedBytes());
+        physical_controller.sendData(encoder->getCodedBytes(), encoder->getSize());
 
         auto timer = std::chrono::milliseconds(0);
         auto timeout_count = 0;
@@ -326,7 +330,7 @@ namespace BM_Network {
             }
             ++timeout_count;
             timer = std::chrono::milliseconds(0);
-            physical_controller.sendData(encoder->getCodedBytes());
+            physical_controller.sendData(encoder->getCodedBytes(), encoder->getSize());
         }
     }
 

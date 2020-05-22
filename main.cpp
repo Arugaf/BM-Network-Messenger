@@ -45,22 +45,22 @@ int main() {
 //    std::cout << std::endl;
 
     dl_cl.connectPorts("COM3","COM2");
-//    std::cout<<"Port opened\n Next?";
-//    std::cin.get();
+    std::cout<<"Port opened\n Next?";
+    std::cin.get();
 
     dl_cl.startListeningOnReadPort();
-//    std::cout<<"Port listened\n Next?";
-//    std::cin.get();
+    std::cout<<"Port listened\n Next?";
+    std::cin.get();
 
     dl_cl.connectToRing("user2");
-//    std::cout<<"User2 connected\n Next?";
-//    std::cin.get();
+    std::cout<<"User2 connected\n Next?";
+    std::cin.get();
 
     //разкоменти для того, кто отправляет
     while(1){
         dl_cl.sendMessage("user1", "user2", "Privet");
         std::cout<<"Message sent\n Next?";
-        std::cin.get();
+        std::getchar();
     }
 
     return 0;

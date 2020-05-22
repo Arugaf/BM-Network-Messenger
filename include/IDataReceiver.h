@@ -6,7 +6,7 @@
 namespace BM_Network {
     class IDataReceiver {
     public:
-        virtual void sendData(const byte* data) = 0;
+        virtual void sendData(const byte* data, size_t size) = 0;
 
         virtual ~IDataReceiver() = default;
     };

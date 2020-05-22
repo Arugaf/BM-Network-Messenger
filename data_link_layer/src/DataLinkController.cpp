@@ -35,8 +35,8 @@ BM_Network::PhysicalControllerDL::PhysicalControllerDL() {
 #endif
 }
 
-void BM_Network::PhysicalControllerDL::sendData(const BM_Network::byte* data) {
-    physical_controller_impl->sendData(data);
+void BM_Network::PhysicalControllerDL::sendData(const BM_Network::byte* data, size_t size) {
+    physical_controller_impl->sendData(data, size);
 }
 
 bool BM_Network::PhysicalControllerDL::connectPorts(const std::string& input_port, const std::string& output_port) {

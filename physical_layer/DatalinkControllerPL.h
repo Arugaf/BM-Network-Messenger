@@ -13,7 +13,7 @@ namespace BM_Network {
     class DatalinkControllerPL {
     public:
         explicit DatalinkControllerPL();
-        void sendData(const byte *data);
+        void sendData(const byte *data, size_t size);
         virtual void connLostCallback(const PortType& portType);
         void injectImpl(const std::shared_ptr<IDataLinkControllerPhysical>& impl);
     private:

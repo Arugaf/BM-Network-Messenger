@@ -10,7 +10,7 @@ namespace BM_Network {
     class PhysicalControllerDL {
     public:
         explicit PhysicalControllerDL();
-        void sendData(const byte* data);
+        void sendData(const byte* data, size_t size);
         bool connectPorts(const std::string& input_port, const std::string& output_port);
         void disconnectPorts();
         void startListeningOnReadPort();

@@ -7,7 +7,7 @@
 namespace BM_Network {
     class IDataLinkControllerPhysical : virtual public IDataReceiver {
     public:
-        void sendData(const byte *data) override = 0;
+        void sendData(const byte *data, size_t size) override = 0;
         virtual void connLostCallback(const PortType& portType) = 0;
         ~IDataLinkControllerPhysical() override = default;
     };

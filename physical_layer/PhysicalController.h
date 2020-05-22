@@ -32,7 +32,7 @@ namespace BM_Network {
         ~PhysicalController() override;
         bool connectPorts(const std::string &input_port, const std::string &output_port) override;
         void disconnectPorts() override;
-        void sendData(const byte *) override;
+        void sendData(const byte *, size_t size) override;
         void startListeningOnReadPort() override;
 
     private:

@@ -8,7 +8,7 @@
 namespace BM_Network {
     class IPhysicalLayerController : virtual public IDataReceiver, virtual public IConnector {
     public:
-        void sendData(const byte* data) override = 0;
+        void sendData(const byte* data, size_t size) override = 0;
 
         bool connectPorts(const std::string& input_port, const std::string& output_port) override = 0;
 
@@ -23,8 +23,8 @@ namespace BM_Network {
 
     class PhysicalLayerStub : public IPhysicalLayerController {
     public:
-        void sendData(const byte* data) override {
-            std::cout << "Data received, address is: " << &data << std::endl;
+        void sendData(const byte* data, size_t size) override {
+            std::cout << "Data received,size is "<<size<<",data is: " << &data << std::endl;
         }
 
         void startListeningOnReadPort() override {
