@@ -49,6 +49,7 @@ int main() {
     std::string input_port;
     std::string output_port;
 
+    again:
     std::cin >> input_port >> output_port;
 
     dl_cl->connectPorts(input_port, output_port);
@@ -69,12 +70,20 @@ int main() {
     //разкоменти для того, кто отправляет
     std::string message;
     std::string receiver;
-    while(1) {
+    while(true) {
         std::cin >> receiver >> message;
-        dl_cl->sendMessage(receiver, message);
+        if (receiver == "start_again") {
+            goto again;
+        }
+        if (receiver == "end") {
+            dl_cl->unlinkRing();
+        } else {
+            dl_cl->sendMessage(receiver, message);
+        }
     }
 
-    // TODO: поддержка соединения, подтверждение приема поддержания, подтверждение разрыва соединения, переделать handleFrameEvent, переделать передачу указателей
+    // TODO: поддержка соединения, подтверждение приема поддержания, переделать handleFrameEvent, переделать передачу указателей
+    // TODO: кодирование и декодирование, возможность разбить сообщение, запретить одинаковые имена
 
     return 0;
 }
