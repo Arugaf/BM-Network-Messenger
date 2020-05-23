@@ -57,7 +57,7 @@ namespace BM_Network {
         std::chrono::milliseconds timeout = std::chrono::milliseconds(5000);
         bool ack = true;
         bool connected = false;
-        bool disconnect_timeout = false; // true
+        bool disconnect_timeout = true; // true
         int ack_counter = 0;
 
         std::string this_user_name;
@@ -85,7 +85,7 @@ namespace BM_Network {
         auto encoder = std::make_unique<Encoder>(frame.getFrame(), frame.getSize());
         physical_controller.sendData(encoder->getCodedBytes(), encoder->getSize() );
 
-        auto timer = std::chrono::milliseconds(0);
+        /*auto timer = std::chrono::milliseconds(0);
         auto timeout_count = 0;
         while(timeout_count < 3) {
             while(timer < timeout) {
@@ -101,7 +101,7 @@ namespace BM_Network {
             ++timeout_count;
             timer = std::chrono::milliseconds(0);
             physical_controller.sendData(encoder->getCodedBytes(), encoder->getSize());
-        }
+        }*/
     }
 
     template<typename DataType, typename Encoder, typename Decoder>
@@ -117,7 +117,7 @@ namespace BM_Network {
 
         ack = true;
         Frame last_frame("", 0);
-        if (!connected && disconnect_timeout && frame.getType() != LFrame) {
+        if (!connected && disconnect_timeout/* && frame.getType() != LFrame*/) {
             physical_controller.sendData(data, enc.getSize());
         } else if (!disconnect_timeout && !connected) {
             if (frame.getSender() == -2) {
@@ -287,7 +287,7 @@ namespace BM_Network {
         Encoder encoder(frame.getFrame(), frame.getSize());
         physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
 
-        auto timer = std::chrono::milliseconds(0);
+        /*auto timer = std::chrono::milliseconds(0);
         auto timeout_count = 0;
         while(timeout_count < 3) {
             while(timer < timeout) {
@@ -307,7 +307,7 @@ namespace BM_Network {
         application_controller.sendEvent(NO_ACK);
         application_controller.sendEvent(DISRUPTION);
 
-        return false;
+        return false;*/
     }
 
     template<typename DataType, typename Encoder, typename Decoder>
@@ -369,6 +369,7 @@ namespace BM_Network {
     void DataLinkController<DataType, Encoder, Decoder>::connLostCallback(const PortType& portType) {
         connected = false;
         disconnect_timeout = true;
+        std::cout << "lol" << std::endl;
 
         physical_controller.disconnectPorts();
 

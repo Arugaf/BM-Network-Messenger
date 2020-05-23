@@ -12,13 +12,13 @@
 int main() {
     BM_Network::ApplicationControllerDL app_cl_dl;
     BM_Network::PhysicalControllerDL phc_cl_dl;
-    BM_Network::DataLinkController dl_cl(phc_cl_dl, app_cl_dl);
+    auto dl_cl = std::make_shared<BM_Network::DataLinkController<>>(phc_cl_dl, app_cl_dl);
 
     BM_Network::DatalinkControllerPL dl_cl_pl;
-    BM_Network::PhysicalController phc_cl(dl_cl_pl);
-    phc_cl.addDataLinkController(std::make_shared<BM_Network::DataLinkController<>>(dl_cl));
+    auto phc_cl = std::make_shared<BM_Network::PhysicalController>(dl_cl_pl);
+    phc_cl->addDataLinkController(dl_cl);
 
-    dl_cl.addPhysicalController(std::make_shared<BM_Network::PhysicalController>(phc_cl));
+    dl_cl->addPhysicalController(phc_cl);
 
 //    BM_Network::byte bytes[] = {'A', 'b', 'c'};
 //    BM_Network::Frame frame(0x7F, -2, BM_Network::FrameType::LFrame, 3, bytes);
@@ -44,23 +44,34 @@ int main() {
 //    dl_cl.sendData(encoder3.getCodedBytes());
 //    std::cout << std::endl;
 
-    dl_cl.connectPorts("COM3","COM2");
-    std::cout<<"Port opened\n Next?";
-    std::cin.get();
+    std::string wait;
 
-    dl_cl.startListeningOnReadPort();
-    std::cout<<"Port listened\n Next?";
-    std::cin.get();
+    std::string input_port;
+    std::string output_port;
 
-    dl_cl.connectToRing("user2");
-    std::cout<<"User2 connected\n Next?";
-    std::cin.get();
+    std::cin >> input_port >> output_port;
+
+    dl_cl->connectPorts(input_port, output_port);
+    std::cout << "Connected" << std::endl;
+    std::cin >> wait;
+
+    dl_cl->startListeningOnReadPort();
+    std::cout << "Started listening" << std::endl;
+
+    std::string user_name;
+    std::cin >> user_name;
+    dl_cl->connectToRing(user_name);
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    //std::cout<<"User2 connected\n Next?";
+    std::cout << "Ring" << std::endl;
+    std::cin >> wait;
 
     //разкоменти для того, кто отправляет
+    std::string message;
+    std::string receiver;
     while(1){
-        dl_cl.sendMessage("user1", "user2", "Privet");
-        std::cout<<"Message sent\n Next?";
-        std::getchar();
+        std::cin >> receiver >> message;
+        dl_cl->sendMessage(receiver, user_name, message);
     }
 
     return 0;
