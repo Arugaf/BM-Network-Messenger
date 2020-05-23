@@ -7,16 +7,10 @@
 
 #ifndef APPLICATION_LAYER
 #define DATA_LAYER_POINTER ApplicationLayerStub
-
-#else
-#define DATA_LAYER_POINTER // TODO:
 #endif
 
 #ifndef PHYSICAL_LAYER
 #define PHYSICAL_LAYER_POINTER PhysicalLayerStub
-
-#else
-#define PHYSICAL_LAYER_POINTER // TODO:
 #endif
 
 #include "ApplicationControllerDL.h"
@@ -42,7 +36,7 @@ namespace BM_Network {
         DataLinkController(PhysicalControllerDL& ph_cl, ApplicationControllerDL& ap_cl);
         void addApplicationController(const std::shared_ptr<IApplicationLayerController>& a_c);
         void addPhysicalController(const std::shared_ptr<IPhysicalLayerController>& p_c);
-        void sendMessage(const std::string& receiver, const std::string& sender, const std::string& message) override;
+        void sendMessage(const std::string& user_name, const std::string& message) override;
         void sendData(const byte* data, size_t size) override;
         bool connectPorts(const std::string& input_port, const std::string& output_port) override;
         void startListeningOnReadPort() override;
@@ -80,8 +74,8 @@ namespace BM_Network {
     template<typename DataType, typename Encoder, typename Decoder>
     void
     BM_Network::DataLinkController<DataType, Encoder, Decoder>::
-    sendMessage(const std::string& receiver, const std::string& sender, const std::string& message) {
-        Frame frame(users[receiver], users[sender], InfFrame, message.size(), message.c_str());
+    sendMessage(const std::string& receiver, const std::string& message) {
+        Frame frame(users[receiver], users[this_user_name], InfFrame, message.size(), message.c_str());
         auto encoder = std::make_unique<Encoder>(frame.getFrame(), frame.getSize());
         physical_controller.sendData(encoder->getCodedBytes(), encoder->getSize() );
 
@@ -160,7 +154,7 @@ namespace BM_Network {
                             Encoder new_encoder(new_frame.getFrame(), new_frame.getSize());
                             physical_controller.sendData(new_encoder.getCodedBytes(), new_encoder.getSize());
                         } else {
-                            application_controller.sendMessage(addresses[frame.getDestination()], addresses[frame.getSender()], frame.getData());
+                            application_controller.sendMessage(addresses[frame.getSender()], frame.getData());
 
                             Frame a_frame(frame.getSender(), address, FrameType::AFrame, 0);
                             Encoder new_encoder(a_frame.getFrame(), a_frame.getSize());
@@ -287,7 +281,7 @@ namespace BM_Network {
         Encoder encoder(frame.getFrame(), frame.getSize());
         physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
 
-        /*auto timer = std::chrono::milliseconds(0);
+        auto timer = std::chrono::milliseconds(0);
         auto timeout_count = 0;
         while(timeout_count < 3) {
             while(timer < timeout) {
@@ -307,7 +301,7 @@ namespace BM_Network {
         application_controller.sendEvent(NO_ACK);
         application_controller.sendEvent(DISRUPTION);
 
-        return false;*/
+        return false;
     }
 
     template<typename DataType, typename Encoder, typename Decoder>

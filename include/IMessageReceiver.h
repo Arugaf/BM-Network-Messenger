@@ -9,7 +9,7 @@ namespace BM_Network {
     class IMessageReceiver {
     public:
         virtual void
-        sendMessage(const std::string& receiver, const std::string& sender, const std::string& message) = 0;
+        sendMessage(const std::string& user_name, const std::string& message) = 0;
 
         virtual ~IMessageReceiver() = default;
     };

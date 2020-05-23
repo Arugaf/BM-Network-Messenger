@@ -69,10 +69,12 @@ int main() {
     //разкоменти для того, кто отправляет
     std::string message;
     std::string receiver;
-    while(1){
+    while(1) {
         std::cin >> receiver >> message;
-        dl_cl->sendMessage(receiver, user_name, message);
+        dl_cl->sendMessage(receiver, message);
     }
+
+    // TODO: find для юзеров и адресов, поддержка соединения, подтверждения приема сообщения, подтверждение приема соединения, подтверждение приема поддержания, динамические адреса, подтверждение разрыва соединения
 
     return 0;
 }

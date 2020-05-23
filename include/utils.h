@@ -15,7 +15,6 @@ namespace BM_Network {
         CONNECT_REQUEST = 5,    //
         DISCONNECT_REQUEST = 6, //
         ACK = 7,                // Message delivered
-        BAD_PORT = 8
     };
 
     enum FrameType {
