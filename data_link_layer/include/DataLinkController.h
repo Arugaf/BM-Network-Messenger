@@ -7,16 +7,10 @@
 
 #ifndef APPLICATION_LAYER
 #define DATA_LAYER_POINTER ApplicationLayerStub
-
-#else
-#define DATA_LAYER_POINTER // TODO:
 #endif
 
 #ifndef PHYSICAL_LAYER
 #define PHYSICAL_LAYER_POINTER PhysicalLayerStub
-
-#else
-#define PHYSICAL_LAYER_POINTER // TODO:
 #endif
 
 #include "ApplicationControllerDL.h"
@@ -33,6 +27,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <queue>
 #include <thread>
 
 namespace BM_Network {
@@ -42,7 +37,7 @@ namespace BM_Network {
         DataLinkController(PhysicalControllerDL& ph_cl, ApplicationControllerDL& ap_cl);
         void addApplicationController(const std::shared_ptr<IApplicationLayerController>& a_c);
         void addPhysicalController(const std::shared_ptr<IPhysicalLayerController>& p_c);
-        void sendMessage(const std::string& receiver, const std::string& sender, const std::string& message) override;
+        void sendMessage(const std::string& receiver, const std::string& message) override;
         void sendData(const byte* data, size_t size) override;
         bool connectPorts(const std::string& input_port, const std::string& output_port) override;
         void startListeningOnReadPort() override;
@@ -55,10 +50,11 @@ namespace BM_Network {
         ApplicationControllerDL& application_controller;
 
         std::chrono::milliseconds timeout = std::chrono::milliseconds(5000);
-        bool ack = true;
+        byte last_msg_receiver = 0;
+        bool ack = false;
+        bool ret = false;
         bool connected = false;
         bool disconnect_timeout = true; // true
-        int ack_counter = 0;
 
         std::string this_user_name;
         byte address = 0x00;
@@ -66,60 +62,89 @@ namespace BM_Network {
         std::unordered_map<std::string, byte> users;
         std::map<byte, std::string> addresses;
 
-        void handleFrameEvent(Frame& frame, std::unique_ptr<HammingDecoder<DataType>> decoder, const byte* data);
+        std::unordered_map<std::string, bool> informed_users;
+        bool check_if_informed = false;
+
+        void handleFrameEvent(Frame& frame, Decoder& decoder, const byte* data);
+        void checkEvent();
         void maintainConnection();
+
+        std::thread event_handler;
+        std::queue<const byte*> events;
+
+        bool working = false;
+        bool keep_checking_connection = false;
+
+        std::unordered_map<std::string, bool> linked_users;
     };
 
     template<typename DataType, typename Encoder, typename Decoder>
-    BM_Network::DataLinkController<DataType, Encoder, Decoder>::DataLinkController(BM_Network::PhysicalControllerDL& ph_cl,
-                                                                         BM_Network::ApplicationControllerDL& ap_cl) : physical_controller(ph_cl),
-                                                                                                                       application_controller(ap_cl) {
+    BM_Network::DataLinkController<DataType, Encoder, Decoder>::
+    DataLinkController(BM_Network::PhysicalControllerDL& ph_cl, BM_Network::ApplicationControllerDL& ap_cl) : physical_controller(ph_cl),
+                                                                                                              application_controller(ap_cl) {
 
     }
 
     template<typename DataType, typename Encoder, typename Decoder>
     void
     BM_Network::DataLinkController<DataType, Encoder, Decoder>::
-    sendMessage(const std::string& receiver, const std::string& sender, const std::string& message) {
-        Frame frame(users[receiver], users[sender], InfFrame, message.size(), message.c_str());
-        auto encoder = std::make_unique<Encoder>(frame.getFrame(), frame.getSize());
-        physical_controller.sendData(encoder->getCodedBytes(), encoder->getSize() );
+    sendMessage(const std::string& receiver, const std::string& message) {
+        if (users.find(receiver) == users.end()) {
+            return;
+        }
+        keep_checking_connection = false;
+        last_msg_receiver = users[receiver];
+        Frame frame(users[receiver], users[this_user_name], InfFrame, message.size(), message.c_str());
+        Encoder encoder(frame.getFrame(), frame.getSize());
+        physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
 
-        /*auto timer = std::chrono::milliseconds(0);
+        auto timer = std::chrono::milliseconds(0);
         auto timeout_count = 0;
-        while(timeout_count < 3) {
+        auto error_count = 0;
+        while (timeout_count < 3 && error_count < 3) {
             while(timer < timeout) {
+                if (ret) {
+                    ret = false;
+                    physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
+                    timeout_count = 0;
+                    timer = std::chrono::milliseconds(0);
+                    ++error_count;
+                }
+
                 if (ack) {
                     ack = false;
                     application_controller.sendEvent(Event::ACK);
+                    keep_checking_connection = true;
                     return;
                 }
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(200));
-                timer += std::chrono::milliseconds(200);                                                                                                                 if (timer == std::chrono::milliseconds(1000)) {ack = true;}
+                timer += std::chrono::milliseconds(200);
             }
             ++timeout_count;
             timer = std::chrono::milliseconds(0);
-            physical_controller.sendData(encoder->getCodedBytes(), encoder->getSize());
-        }*/
+            physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
+        }
+        application_controller.sendEvent(Event::NO_ACK);
+        keep_checking_connection = true;
     }
 
     template<typename DataType, typename Encoder, typename Decoder>
-    void BM_Network::DataLinkController<DataType, Encoder, Decoder>::sendData(const BM_Network::byte* data, size_t size) {
-        auto decoder = std::make_unique<Decoder>(data);
-        Frame frame(decoder->getDecodedBytes(), decoder->getSize());
-        handleFrameEvent(frame, std::move(decoder), data);
+    void
+    BM_Network::DataLinkController<DataType, Encoder, Decoder>::
+    sendData(const BM_Network::byte* data, size_t size) {
+        auto saved_data = new byte[size];
+        std::copy(data, data + size, saved_data);
+        events.push(saved_data);
     }
 
     template<typename DataType, typename Encoder, typename Decoder>
-    void DataLinkController<DataType, Encoder, Decoder>::handleFrameEvent(Frame& frame, std::unique_ptr<HammingDecoder<DataType>> decoder, const byte* data) {
-        Encoder enc(decoder->getDecodedBytes(),decoder->getSize());
+    void DataLinkController<DataType, Encoder, Decoder>::handleFrameEvent(Frame& frame, Decoder& decoder, const byte* data) {
+        Encoder enc(decoder.getDecodedBytes(),decoder.getSize());
 
-        ack = true;
-        Frame last_frame("", 0);
-        if (!connected && disconnect_timeout/* && frame.getType() != LFrame*/) {
+        if ((!connected && disconnect_timeout) || (!connected && !disconnect_timeout && frame.getType() != LFrame)) {
             physical_controller.sendData(data, enc.getSize());
-        } else if (!disconnect_timeout && !connected) {
+        } else if (!disconnect_timeout && !connected && frame.getType() == LFrame) {
             if (frame.getSender() == -2) {
                 address = 0x01;
                 users[frame.getData()] = address; // this_user_name
@@ -133,6 +158,7 @@ namespace BM_Network {
                     if (is_address) {
                         users[str] = it;
                         addresses[it] = str;
+                        informed_users[str] = false;
                         str.clear();
                         is_address = false;
                         application_controller.addUser(addresses[it]);
@@ -146,6 +172,9 @@ namespace BM_Network {
                         continue;
                     }
                 }
+
+                check_if_informed = true;
+                informed_users[this_user_name] = true;
             }
 
             connected = true;
@@ -155,26 +184,34 @@ namespace BM_Network {
             } else if (frame.getDestination() == address) {
                 switch (frame.getType()) {
                     case InfFrame: {
-                        if (decoder->isError()) {
+                        if (decoder.isError()) {
                             Frame new_frame(frame.getSender(), address, FrameType::RFrame, 0);
                             Encoder new_encoder(new_frame.getFrame(), new_frame.getSize());
                             physical_controller.sendData(new_encoder.getCodedBytes(), new_encoder.getSize());
                         } else {
-                            application_controller.sendMessage(addresses[frame.getDestination()], addresses[frame.getSender()], frame.getData());
+                            application_controller.sendMessage(addresses[frame.getSender()], frame.getData());
 
                             Frame a_frame(frame.getSender(), address, FrameType::AFrame, 0);
-                            Encoder new_encoder(a_frame.getFrame(), a_frame.getSize());
-                            physical_controller.sendData(new_encoder.getCodedBytes(), new_encoder.getSize());
+                            Encoder a_encoder(a_frame.getFrame(), a_frame.getSize());
+                            physical_controller.sendData(a_encoder.getCodedBytes(), a_encoder.getSize());
                         }
                         break;
                     }
                     case AFrame: {
-                        ack = true;
-                        ++ack_counter;
+                        if (check_if_informed) {
+                            informed_users[addresses[frame.getSender()]] = true;
+                        } else if (frame.getSender() == last_msg_receiver) {
+                            ack = true;
+                            last_msg_receiver = 0;
+                        }
+                        break;
+                    }
+                    case MAFrame: {
+                        linked_users[addresses[frame.getSender()]] = true;
                         break;
                     }
                     case RFrame: {
-                        physical_controller.sendData(last_frame.getFrame(), enc.getSize());
+                        ret = true;
                         break;
                     }
                 }
@@ -182,9 +219,13 @@ namespace BM_Network {
                 switch (frame.getType()) {
                     case LFrame: {
                         if (frame.getData().empty()) {
-                            Frame a_frame(frame.getSender(), address, FrameType::AFrame, 0);
-                            Encoder new_encoder(frame.getFrame(), frame.getSize());
-                            physical_controller.sendData(new_encoder.getCodedBytes(), new_encoder.getSize());
+                            if (frame.getSender() != address) {
+                                physical_controller.sendData(data, enc.getSize());
+                            }
+
+                            Frame a_frame(frame.getSender(), address, FrameType::MAFrame, 0);
+                            Encoder a_encoder(a_frame.getFrame(), a_frame.getSize());
+                            physical_controller.sendData(a_encoder.getCodedBytes(), a_encoder.getSize());
                         } else {
                             application_controller.sendEvent(Event::CONNECT_REQUEST);
 
@@ -208,11 +249,10 @@ namespace BM_Network {
 
                                 Encoder encoder(new_frame.getFrame(), new_frame.getSize());
                                 physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
-                                // new_frame.visualize();
 
                                 Frame a_frame(new_frame.getSender(), address, FrameType::AFrame, 0);
-                                Encoder new_encoder(a_frame.getFrame(), a_frame.getSize());
-                                physical_controller.sendData(new_encoder.getCodedBytes(), new_encoder.getSize());
+                                Encoder a_encoder(a_frame.getFrame(), a_frame.getSize());
+                                physical_controller.sendData(a_encoder.getCodedBytes(), a_encoder.getSize());
                             } else {
                                 std::string str;
                                 bool is_address = false;
@@ -236,8 +276,8 @@ namespace BM_Network {
                                 physical_controller.sendData(data, enc.getSize());
 
                                 Frame a_frame(frame.getSender(), address, FrameType::AFrame, 0);
-                                Encoder new_encoder(a_frame.getFrame(), a_frame.getSize());
-                                physical_controller.sendData(new_encoder.getCodedBytes(), new_encoder.getSize());
+                                Encoder a_encoder(a_frame.getFrame(), a_frame.getSize());
+                                physical_controller.sendData(a_encoder.getCodedBytes(), a_encoder.getSize());
                             }
                         }
                         break;
@@ -245,22 +285,12 @@ namespace BM_Network {
 
                     case UFrame: {
                         if (frame.getSender() != address) {
+                            application_controller.sendEvent(DISCONNECT_REQUEST);
                             physical_controller.sendData(data, enc.getSize());
 
                             Frame a_frame(frame.getSender(), address, FrameType::AFrame, 0);
-                            Encoder new_encoder(a_frame.getFrame(), a_frame.getSize());
-                            physical_controller.sendData(new_encoder.getCodedBytes(), new_encoder.getSize());
-
-                            connected = false;
-                            disconnect_timeout = true;
-
-                            physical_controller.disconnectPorts();
-
-                            users.clear();
-                            addresses.clear();
-
-                            application_controller.sendEvent(DISCONNECT_REQUEST);
-                            application_controller.sendEvent(DISRUPTION);
+                            Encoder a_encoder(a_frame.getFrame(), a_frame.getSize());
+                            physical_controller.sendData(a_encoder.getCodedBytes(), a_encoder.getSize());
                         }
                         break;
                     }
@@ -271,7 +301,9 @@ namespace BM_Network {
     }
 
     template<typename DataType, typename Encoder, typename Decoder>
-    bool DataLinkController<DataType, Encoder, Decoder>::connectPorts(const std::string& input_port, const std::string& output_port)  {
+    bool
+    DataLinkController<DataType, Encoder, Decoder>::
+    connectPorts(const std::string& input_port, const std::string& output_port)  {
         return physical_controller.connectPorts(input_port, output_port);
     }
 
@@ -287,15 +319,29 @@ namespace BM_Network {
         Encoder encoder(frame.getFrame(), frame.getSize());
         physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
 
-        /*auto timer = std::chrono::milliseconds(0);
+        auto timer = std::chrono::milliseconds(0);
         auto timeout_count = 0;
         while(timeout_count < 3) {
             while(timer < timeout) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(200));
                 timer += std::chrono::milliseconds(200);
                 if (connected) {
-                    application_controller.sendEvent(CONNECT);
-                    return true;
+                    bool all_informed = true;
+                    for (const auto& it : informed_users) {
+                        if (!it.second) {
+                            all_informed = false;
+                            break;
+                        }
+                    }
+                    if (all_informed) {
+                        check_if_informed = false;
+                        informed_users.clear();
+                        application_controller.sendEvent(CONNECT);
+                        keep_checking_connection = true;
+                        std::thread maintain_connection(&DataLinkController::maintainConnection, this);
+                        maintain_connection.detach();
+                        return true;
+                    }
                 }
             }
             ++timeout_count;
@@ -307,88 +353,212 @@ namespace BM_Network {
         application_controller.sendEvent(NO_ACK);
         application_controller.sendEvent(DISRUPTION);
 
-        return false;*/
+        return false;
     }
 
     template<typename DataType, typename Encoder, typename Decoder>
-    void DataLinkController<DataType, Encoder, Decoder>::maintainConnection() {
-        Frame frame(0x7F, address, LFrame, 0);
-        auto encoder = std::make_unique<Encoder>(frame.getFrame(), frame.getSize());
-        physical_controller.sendData(encoder->getCodedBytes(), encoder->getSize());
+    void
+    DataLinkController<DataType, Encoder, Decoder>::
+    maintainConnection() {
+        while (working) {
+            if (keep_checking_connection) {
+                linked_users.clear();
+                for (const auto& it : users) {
+                    linked_users[it.first] = false;
+                }
+
+                Frame frame(0x7F, address, LFrame, 0);
+                Encoder encoder(frame.getFrame(), frame.getSize());
+                physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
+
+                auto timer = std::chrono::milliseconds(0);
+                auto timeout_count = 0;
+
+                bool mack = false;
+
+                while (timeout_count < 3) {
+                    while (timer < timeout) {
+                        bool is_all_online = true;
+                        for (const auto &it : linked_users) {
+                            if (!it.second) {
+                                is_all_online = false;
+                                break;
+                            }
+                        }
+                        if (is_all_online) {
+                            mack = true;
+                            break;
+                        }
+
+                        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                        timer += std::chrono::milliseconds(200);
+                    }
+
+                    if (mack) {
+                        break;
+                    }
+
+                    ++timeout_count;
+                    timer = std::chrono::milliseconds(0);
+                    physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
+                }
+
+                if (!mack) {
+                    connLostCallback(Read);
+                }
+            }
+
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+        }
+    }
+
+    template<typename DataType, typename Encoder, typename Decoder>
+    void
+    DataLinkController<DataType, Encoder, Decoder>::
+    unlinkRing() {
+        keep_checking_connection = false;
+        Frame uframe(0x7F, address, UFrame);
+        Encoder encoder(uframe.getFrame(), uframe.getSize());
+
+        informed_users.clear();
+        for (const auto& it : users) {
+            informed_users[it.first] = false;
+        }
+
+        informed_users[this_user_name] = true;
+        check_if_informed = true;
+
+        physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
 
         auto timer = std::chrono::milliseconds(0);
         auto timeout_count = 0;
-        while (timeout_count < 3) {
-            while (timer < timeout) {
-                if (ack) {
-                    ack = false;
-                    return;
+
+        while(timeout_count < 3) {
+            while(timer < timeout) {
+                bool all_informed = true;
+                for (const auto& it : informed_users) {
+                    if (!it.second) {
+                        all_informed = false;
+                        break;
+                    }
                 }
 
+                if (all_informed) {
+                    working = false;
+                    last_msg_receiver = 0;
+                    ack = false;
+                    ret = false;
+                    connected = false;
+                    disconnect_timeout = true;
+                    this_user_name.clear();
+                    address = 0x00;
+                    check_if_informed = false;
+
+                    users.clear();
+                    addresses.clear();
+                    informed_users.clear();
+
+                    while (!events.empty()) {
+                        events.pop();
+                    }
+
+                    if (event_handler.joinable()) {
+                        event_handler.join();
+                    }
+
+                    application_controller.sendEvent(DISCONNECT);
+                    physical_controller.disconnectPorts();
+                    return;
+                }
                 std::this_thread::sleep_for(std::chrono::milliseconds(200));
                 timer += std::chrono::milliseconds(200);
             }
             ++timeout_count;
             timer = std::chrono::milliseconds(0);
-            physical_controller.sendData(encoder->getCodedBytes(), encoder->getSize());
+            physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
         }
+
+        application_controller.sendEvent(NO_ACK);
+        keep_checking_connection = true;
     }
 
     template<typename DataType, typename Encoder, typename Decoder>
-    void DataLinkController<DataType, Encoder, Decoder>::unlinkRing() {
-        Frame uframe(0x7F, address, UFrame);
-        auto counter = users.size();
-        while (counter <= ack_counter) {                                                                                                                                                                    ++ack_counter;
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-
-        connected = false;
-        disconnect_timeout = true;
-
-        physical_controller.disconnectPorts();
-
-        users.clear();
-        addresses.clear();
-
-        application_controller.sendEvent(DISCONNECT);
-    }
-
-    template<typename DataType, typename Encoder, typename Decoder>
-    void DataLinkController<DataType, Encoder, Decoder>::addApplicationController(
-            const std::shared_ptr<IApplicationLayerController>& a_c) {
+    void
+    DataLinkController<DataType, Encoder, Decoder>::
+    addApplicationController(const std::shared_ptr<IApplicationLayerController>& a_c) {
         application_controller.injectImpl(a_c);
     }
 
     template<typename DataType, typename Encoder, typename Decoder>
-    void DataLinkController<DataType, Encoder, Decoder>::addPhysicalController(
-            const std::shared_ptr<IPhysicalLayerController>& p_c) {
+    void
+    DataLinkController<DataType, Encoder, Decoder>::
+    addPhysicalController(const std::shared_ptr<IPhysicalLayerController>& p_c) {
         physical_controller.injectImpl(p_c);
     }
 
     template<typename DataType, typename Encoder, typename Decoder>
-    void DataLinkController<DataType, Encoder, Decoder>::connLostCallback(const PortType& portType) {
-        connected = false;
-        disconnect_timeout = true;
-        std::cout << "lol" << std::endl;
+    void
+    DataLinkController<DataType, Encoder, Decoder>::
+    connLostCallback(const PortType& portType) {
+        if (working) {
+            keep_checking_connection = false;
+            working = false;
+            last_msg_receiver = 0;
+            ack = false;
+            ret = false;
+            connected = false;
+            disconnect_timeout = true;
+            this_user_name.clear();
+            address = 0x00;
+            check_if_informed = false;
 
-        physical_controller.disconnectPorts();
+            users.clear();
+            addresses.clear();
+            informed_users.clear();
 
-        users.clear();
-        addresses.clear();
+            while (!events.empty()) {
+                events.pop();
+            }
 
-        application_controller.sendEvent(DISRUPTION);
+            if (event_handler.joinable()) {
+                event_handler.join();
+            }
+
+            application_controller.sendEvent(DISRUPTION);
+            physical_controller.disconnectPorts();
+        }
     }
 
     template<typename DataType, typename Encoder, typename Decoder>
-    void DataLinkController<DataType, Encoder, Decoder>::startListeningOnReadPort() {
+    void
+    DataLinkController<DataType, Encoder, Decoder>::
+    startListeningOnReadPort() {
         physical_controller.startListeningOnReadPort();
+        working = true;
+        event_handler = std::thread(&DataLinkController::checkEvent, this);
+    }
+
+    template<typename DataType, typename Encoder, typename Decoder>
+    void
+    DataLinkController<DataType, Encoder, Decoder>::
+    checkEvent() {
+        while (working) {
+            if (!events.empty()) {
+                auto data = events.front();
+                Decoder decoder(data);
+                Frame frame(decoder.getDecodedBytes(), decoder.getSize());
+                handleFrameEvent(frame, decoder, data);
+                delete[] data;
+                events.pop();
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
     }
 }
 
-// TODO: Разбить файлы, организовать нормальную структуру, понять как обрабатывать ошибки, а также кадры RET и ACK, как устанавливать соединение и раздавать адреса, bimap для users/addresses, создание объектов-контроллеров без использование контроллеров иных уровней
-// TODO: Интерфейсные методы (getData) должны возвращать код успеха/ошибки
-
 #endif //BM_NETWORK_MESSENGER_DATALINKCONTROLLER_H
 
-//TODO: дисконнект, интерфейс для аппликейшн лэйер
+// TODO: переделать handleFrameEvent
+// TODO: кодирование и декодирование, возможность разбить сообщение, запретить одинаковые имена
+
 // TODO: .inl && контроллеры убрать

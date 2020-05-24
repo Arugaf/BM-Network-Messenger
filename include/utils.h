@@ -14,8 +14,7 @@ namespace BM_Network {
         CONNECT = 4,            //
         CONNECT_REQUEST = 5,    //
         DISCONNECT_REQUEST = 6, //
-        ACK = 7,                // Message delivered
-        BAD_PORT = 8
+        ACK = 7                 // Message delivered
     };
 
     enum FrameType {
@@ -23,7 +22,8 @@ namespace BM_Network {
         LFrame = 2,   // Link frame for connection establishing
         UFrame = 3,   // Uplink frame for disconnection
         AFrame = 4,   // ACK frame for receipt confirmation
-        RFrame = 5    // Ret frame for repeated request
+        RFrame = 5,   // Ret frame for repeated request
+        MAFrame = 6   // Ack frame for link-maintaing frame
     };
 
     enum PortType {

@@ -12,9 +12,9 @@ BM_Network::ApplicationControllerDL::ApplicationControllerDL() {
 #endif
 }
 
-void BM_Network::ApplicationControllerDL::sendMessage(const std::string& receiver, const std::string& sender,
+void BM_Network::ApplicationControllerDL::sendMessage(const std::string& user_name,
                                                       const std::string& message) {
-    application_controller_impl->sendMessage(receiver, sender, message);
+    application_controller_impl->sendMessage(user_name, message);
 }
 
 void BM_Network::ApplicationControllerDL::sendEvent(BM_Network::Event event) {

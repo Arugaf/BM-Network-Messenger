@@ -10,7 +10,7 @@ namespace BM_Network {
     class ApplicationControllerDL {
     public:
         explicit ApplicationControllerDL();
-        void sendMessage(const std::string& receiver, const std::string& sender, const std::string& message);
+        void sendMessage(const std::string& user_name, const std::string& message);
         void sendEvent(Event event);
         void addUser(const std::string& user);
         void injectImpl(const std::shared_ptr<IApplicationLayerController>& impl);
