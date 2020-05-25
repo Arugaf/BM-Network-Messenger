@@ -5,7 +5,7 @@
 #ifndef BM_NETWORK_MESSENGER_HAMMINGDECODER_H
 #define BM_NETWORK_MESSENGER_HAMMINGDECODER_H
 
-#include "utils.h"
+#include "include/utils.h"
 
 #include "BitIO.h"
 #include "Hamming3ErrorController.h"

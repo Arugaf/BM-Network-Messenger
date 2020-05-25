@@ -14,10 +14,10 @@
 #endif
 
 #include "ApplicationControllerDL.h"
-#include "IDataLinkControllerApplication.h"
-#include "IDataLinkControllerPhysical.h"
+#include "include/IDataLinkControllerApplication.h"
+#include "include/IDataLinkControllerPhysical.h"
 #include "PhysicalControllerDL.h"
-#include "utils.h"
+#include "include/utils.h"
 
 #include "HammingDecoder.hpp"
 #include "HammingEncoder.hpp"
@@ -29,6 +29,7 @@
 #include <memory>
 #include <queue>
 #include <thread>
+#include <unordered_map>
 
 namespace BM_Network {
     template<typename DataType = byte, typename Encoder = HammingEncoder<DataType>, typename Decoder = HammingDecoder<DataType>>
@@ -338,8 +339,8 @@ namespace BM_Network {
                         informed_users.clear();
                         application_controller.sendEvent(CONNECT);
                         keep_checking_connection = true;
-                        std::thread maintain_connection(&DataLinkController::maintainConnection, this);
-                        maintain_connection.detach();
+                        //std::thread maintain_connection(&DataLinkController::maintainConnection, this);
+                        //maintain_connection.detach();
                         return true;
                     }
                 }
@@ -356,61 +357,61 @@ namespace BM_Network {
         return false;
     }
 
-    template<typename DataType, typename Encoder, typename Decoder>
-    void
-    DataLinkController<DataType, Encoder, Decoder>::
-    maintainConnection() {
-        while (working) {
-            if (keep_checking_connection) {
-                linked_users.clear();
-                for (const auto& it : users) {
-                    linked_users[it.first] = false;
-                }
+//    template<typename DataType, typename Encoder, typename Decoder>
+//    void
+//    DataLinkController<DataType, Encoder, Decoder>::
+//    maintainConnection() {
+//        while (working) {
+//            if (keep_checking_connection) {
+//                linked_users.clear();
+//                for (const auto& it : users) {
+//                    linked_users[it.first] = false;
+//                }
 
-                Frame frame(0x7F, address, LFrame, 0);
-                Encoder encoder(frame.getFrame(), frame.getSize());
-                physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
+//                Frame frame(0x7F, address, LFrame, 0);
+//                Encoder encoder(frame.getFrame(), frame.getSize());
+//                physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
 
-                auto timer = std::chrono::milliseconds(0);
-                auto timeout_count = 0;
+//                auto timer = std::chrono::milliseconds(0);
+//                auto timeout_count = 0;
 
-                bool mack = false;
+//                bool mack = false;
 
-                while (timeout_count < 3) {
-                    while (timer < timeout) {
-                        bool is_all_online = true;
-                        for (const auto &it : linked_users) {
-                            if (!it.second) {
-                                is_all_online = false;
-                                break;
-                            }
-                        }
-                        if (is_all_online) {
-                            mack = true;
-                            break;
-                        }
+//                while (timeout_count < 3) {
+//                    while (timer < timeout) {
+//                        bool is_all_online = true;
+//                        for (const auto &it : linked_users) {
+//                            if (!it.second) {
+//                                is_all_online = false;
+//                                break;
+//                            }
+//                        }
+//                        if (is_all_online) {
+//                            mack = true;
+//                            break;
+//                        }
 
-                        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-                        timer += std::chrono::milliseconds(200);
-                    }
+//                        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+//                        timer += std::chrono::milliseconds(200);
+//                    }
 
-                    if (mack) {
-                        break;
-                    }
+//                    if (mack) {
+//                        break;
+//                    }
 
-                    ++timeout_count;
-                    timer = std::chrono::milliseconds(0);
-                    physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
-                }
+//                    ++timeout_count;
+//                    timer = std::chrono::milliseconds(0);
+//                    physical_controller.sendData(encoder.getCodedBytes(), encoder.getSize());
+//                }
 
-                if (!mack) {
-                    connLostCallback(Read);
-                }
-            }
+//                if (!mack) {
+//                    connLostCallback(Read);
+//                }
+//            }
 
-            std::this_thread::sleep_for(std::chrono::seconds(5));
-        }
-    }
+//            std::this_thread::sleep_for(std::chrono::seconds(5));
+//        }
+//    }
 
     template<typename DataType, typename Encoder, typename Decoder>
     void

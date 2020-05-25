@@ -3,6 +3,8 @@
 //
 
 #include "PhysicalController.h"
+#include "DatalinkControllerPL.h"
+#include "include/utils.h"
 
 BM_Network::PhysicalController::PhysicalController(BM_Network::DatalinkControllerPL &dl_cl) : datalink_controller(dl_cl) {
 
@@ -64,7 +66,7 @@ void BM_Network::PhysicalController::startListeningOnReadPort() {
     a.detach();
 }
 
-void BM_Network::PhysicalController::addDataLinkController(const std::shared_ptr<IDataLinkControllerPhysical> &dl_cl) {
+void BM_Network::PhysicalController::addDataLinkController(const std::shared_ptr<BM_Network::IDataLinkControllerPhysical> &dl_cl) {
     datalink_controller.injectImpl(dl_cl);
 }
 

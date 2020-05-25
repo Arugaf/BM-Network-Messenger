@@ -15,13 +15,14 @@
 #else
 
 #include <unistd.h>
-#include "DatalinkControllerPL.h"
-#include "IDataLinkControllerPhysical.h"
-#include "IPhysicalLayerController.h"
 
 #endif
 
 #include "rs232.h"
+#include "DatalinkControllerPL.h"
+#include "include/IDataLinkControllerPhysical.h"
+#include "include/IPhysicalLayerController.h"
+#include "include/utils.h"
 
 namespace BM_Network {
     class PhysicalController : virtual public IPhysicalLayerController {
@@ -43,5 +44,7 @@ namespace BM_Network {
         void read();
     };
 }
+
+
 
 #endif //BM_NETWORK_MESSENGER_PHYSICALLAYERCONTROLLER_H

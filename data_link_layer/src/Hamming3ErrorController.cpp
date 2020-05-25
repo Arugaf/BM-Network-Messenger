@@ -2,7 +2,7 @@
 // Created by arugaf on 10.05.2020.
 //
 
-#include "Hamming3ErrorController.h"
+#include "data_link_layer/include/Hamming3ErrorController.h"
 
 bool BM_Network::Hamming3ErrorController::checkErrors(BM_Network::byte check_byte) const {
     std::bitset<7> check_bits(check_byte);

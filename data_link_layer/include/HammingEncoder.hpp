@@ -5,7 +5,7 @@
 #ifndef BM_NETWORK_MESSENGER_HAMMINGENCODER_HPP
 #define BM_NETWORK_MESSENGER_HAMMINGENCODER_HPP
 
-#include "utils.h"
+#include "include/utils.h"
 
 #include "BitIO.h"
 
