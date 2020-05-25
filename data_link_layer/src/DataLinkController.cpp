@@ -2,9 +2,9 @@
 // Created by arugaf on 10.05.2020.
 //
 
-#include <PhysicalControllerDL.h>
+#include <data_link_layer/include/PhysicalControllerDL.h>
 
-#include "DataLinkController.h"
+#include "data_link_layer/include/DataLinkController.h"
 
 BM_Network::ApplicationControllerDL::ApplicationControllerDL() {
 #ifndef APPLICATION_LAYER
